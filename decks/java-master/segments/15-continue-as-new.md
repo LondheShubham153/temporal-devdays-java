@@ -63,6 +63,31 @@ waits for the last run.
 
 ---
 layout: default
+clicks: 2
+---
+
+# One Workflow, many runs
+
+<ContinueAsNewRuns />
+
+<!--
+The previous slide as a picture: the subscription from the walkthrough coming
+up, a few years in.
+
+- **Start.** Run 1 bills month after month. Its Event History fills until
+  `isContinueAsNewSuggested()` turns true.
+- **Click 1.** It calls `continueAsNew` with only `cyclesCompleted`. Run 2
+  starts under the same Workflow ID with a new Run ID and an empty history,
+  and picks up at cycle 42.
+- **Click 2.** Same again. Run 3 is the one running now; runs 1 and 2 are
+  closed as Continued-As-New, and their histories are still there in the UI.
+
+Point at the dashed box: callers only ever use `subscription-42`. A Signal or
+`getResult` by Workflow ID reaches whichever run is current.
+-->
+
+---
+layout: default
 ---
 
 # When to use it
