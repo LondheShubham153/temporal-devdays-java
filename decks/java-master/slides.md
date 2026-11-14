@@ -52,14 +52,14 @@ themeConfig:
       label: Updates
     - id: quiz
       label: Quiz
+    - id: saga
+      label: "Compensations: the Saga pattern"
     - id: child
       label: Child Workflows
     - id: can
       label: Continue-As-New
     - id: heartbeats
       label: Heartbeats
-    - id: saga
-      label: "Compensations: the Saga pattern"
     - id: patterns
       label: Patterns and anti-patterns
     - id: claim-check
@@ -198,7 +198,7 @@ layout: section
 
 # Advanced Temporal Topics
 
-Child Workflows, Continue‑As‑New, Heartbeats, Sagas, and beyond.
+Sagas, Child Workflows, Continue‑As‑New, Heartbeats, and beyond.
 
 </ZiggyHero>
 
@@ -212,52 +212,6 @@ anything, which is the Durable Execution pitch in one animal. The wizard hat and
 wand were added on top of the official art (from the "Temporal in Space" blog
 post); there is no official wizard version, so check
 with brand before using it outside a workshop.
--->
-
----
-src: ./segments/14-child-workflows.md
----
-
----
-src: ./segments/15-continue-as-new.md
----
-
----
-src: ./segments/16-heartbeating.md
----
-
----
-layout: exercise
-minutes: 35
-heading: Labs
----
-
-<CopyLink href="https://play.instruqt.com/temporal/invite/zxfg8rb7ygov" />
-
-- Child Workflows · 15 min
-- Continue-As-New · 10 min
-- Heartbeats · 10 min
-
-<!--
-The labs for the three sections just taught, in this order. Each is its own
-Track, and all of them sit behind the one invite link; the minutes are each
-lab's measured length, and each Track's time limit is 30.
-
-- **Child Workflows** (workshops/child-workflows): run one child, chain
-  children five deep and follow a failure up from the bottom, fan out and watch
-  the default Parent Close Policy terminate every child, then write the fan in
-  with Async.function and Promise.allOf.
-- **Continue-As-New** (workshops/continue-as-new-subscription): a 30-cycle
-  subscription is terminated by the Service at its history limit, then rolls
-  over on isContinueAsNewSuggested() and finishes. The lab's dev server lowers the
-  limits to 40 and 200 Events so both happen in seconds.
-- **Heartbeats** (workshops/heartbeats-shipment): crash a Worker ten items into
-  a packing job and watch the retry wait out the start-to-close timeout and
-  start again at item 0; then add setHeartbeatTimeout, heartbeat(packed) and a
-  resume from getHeartbeatDetails, crash it again, and watch the retry start in
-  seconds where it left off.
-
-Leave this slide up while people open the labs.
 -->
 
 ---
@@ -309,18 +263,75 @@ src: ./segments/17-saga-07-related.md
 
 ---
 layout: exercise
-minutes: 25
+minutes: 30
 heading: "Lab: The Saga Pattern"
 ---
 
 <CopyLink href="https://play.instruqt.com/temporal/invite/zxfg8rb7ygov" />
+
+Finished early? **Heartbeats** · 10 min
 
 <!--
 The Saga Workshop's lab (workshops/saga-order-fulfillment):
 an order that reserves stock, charges a card and dispatches a courier, and
 undoes the first two when the third fails.
 
+The Saga gets the most lab time of the day because learners rate it the most
+useful. Thirty minutes covers its four Challenges; the Track's own limit is
+40. Heartbeats is the Stretch Workshop (ADR 0005): anyone who finishes early
+can open it from the same invite link. Nothing later depends on it.
+
 Leave this slide up while people open the lab.
+-->
+
+---
+src: ./segments/14-child-workflows.md
+---
+
+---
+src: ./segments/15-continue-as-new.md
+---
+
+---
+src: ./segments/16-heartbeating.md
+---
+
+---
+layout: exercise
+minutes: 25
+heading: Labs
+---
+
+<CopyLink href="https://play.instruqt.com/temporal/invite/zxfg8rb7ygov" />
+
+- Child Workflows · 15 min
+- Continue-As-New · 10 min
+
+Finished early? **Heartbeats** · 10 min
+
+<!--
+The labs for the three sections just taught. Child Workflows and
+Continue-As-New are for everyone, in that order. Heartbeats is the Stretch
+Workshop (ADR 0005): only for learners who finish early, and nothing later
+depends on it. The slides taught it to everyone; only the lab is optional.
+Each is its own Track, and all of them sit behind the one invite link; the
+minutes are each lab's measured length, and each Track's time limit is 30.
+
+- **Child Workflows** (workshops/child-workflows): run one child, chain
+  children five deep and follow a failure up from the bottom, fan out and watch
+  the default Parent Close Policy terminate every child, then write the fan in
+  with Async.function and Promise.allOf.
+- **Continue-As-New** (workshops/continue-as-new-subscription): a 30-cycle
+  subscription is terminated by the Service at its history limit, then rolls
+  over on isContinueAsNewSuggested() and finishes. The lab's dev server lowers the
+  limits to 40 and 200 Events so both happen in seconds.
+- **Heartbeats** (workshops/heartbeats-shipment): crash a Worker ten items into
+  a packing job and watch the retry wait out the start-to-close timeout and
+  start again at item 0; then add setHeartbeatTimeout, heartbeat(packed) and a
+  resume from getHeartbeatDetails, crash it again, and watch the retry start in
+  seconds where it left off.
+
+Leave this slide up while people open the labs.
 -->
 
 ---
