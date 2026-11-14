@@ -32,7 +32,8 @@ class WalkthroughsTest {
   private static final Pattern CODE_TAG = Pattern.compile("<code>(.*?)</code>");
   private static final Pattern HEADING = Pattern.compile("^heading: (.+)$", Pattern.MULTILINE);
   private static final Pattern FENCE =
-      Pattern.compile("^```java \\{([^}]*)\\}\\n([\\s\\S]*?)^```$", Pattern.MULTILINE);
+      // Java, or `txt` for a pseudocode walkthrough.
+      Pattern.compile("^```(?:java|txt) \\{([^}]*)\\}\\n([\\s\\S]*?)^```$", Pattern.MULTILINE);
 
   record Walkthrough(String id, List<String> steps, List<String> notes, List<String> code) {}
 
@@ -85,7 +86,7 @@ class WalkthroughsTest {
         String heading = h.find() ? h.group(1).replaceAll("^\"|\"$", "") : "(no heading)";
         Matcher f = FENCE.matcher(body);
         if (!f.find()) {
-          throw new IllegalStateException(name + ": " + heading + " has no highlighted java block");
+          throw new IllegalStateException(name + ": " + heading + " has no highlighted java or txt block");
         }
         List<String> specs = Arrays.asList(f.group(1).split("\\|"));
         // `all` burns click 0, unannotated.

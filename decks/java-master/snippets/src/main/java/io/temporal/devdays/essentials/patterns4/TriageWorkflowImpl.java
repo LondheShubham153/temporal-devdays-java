@@ -11,7 +11,7 @@ public class TriageWorkflowImpl implements TriageWorkflow {
           ClaimActivities.class,
           ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofSeconds(30)).build());
 
-  // slide: 04-design-patterns.md "Keep it in the Workflow if it… makes business decisions"
+  // slide: 05-workflows.md "Keep it in the Workflow if it… makes business decisions"
   @Override
   public ApprovalStatus triage(Claim claim) {
     if (claim.amount() > 10_000 || claim.type() == ClaimType.SURGERY) {

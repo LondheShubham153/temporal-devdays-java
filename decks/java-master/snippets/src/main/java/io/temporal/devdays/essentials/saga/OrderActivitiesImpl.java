@@ -38,7 +38,6 @@ public class OrderActivitiesImpl implements OrderActivities {
     return "TRK-" + order.orderId();
   }
 
-  // slide: 17-saga-06-practices.md "heading: An idempotent compensation"
   @Override
   public void releaseInventoryIfReserved(Order order) {
     if (!Ledger.isReserved(order.orderId())) {
@@ -47,7 +46,6 @@ public class OrderActivitiesImpl implements OrderActivities {
     }
     Ledger.record("release:" + order.orderId());
   }
-  // end slide
 
   @Override
   public void refundPaymentIfCharged(Order order) {

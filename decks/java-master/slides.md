@@ -84,7 +84,7 @@ variant: planet-teal
 
 # Temporal Essentials
 
-## Java · Foundations
+## Java
 
 <!--
 Temporal Essentials, the Foundations Deck for a Java Dev Day. Every snippet
@@ -129,11 +129,11 @@ src: ./segments/06-activities.md
 ---
 
 ---
-src: ./segments/06b-event-history.md
+src: ./segments/04-design-patterns.md
 ---
 
 ---
-src: ./segments/04-design-patterns.md
+src: ./segments/06b-event-history.md
 ---
 
 ---
@@ -150,9 +150,12 @@ minutes: 15
 heading: "Lab: The First Workflow"
 ---
 
-**[play.instruqt.com/temporal/tracks/first-workflow-java](https://play.instruqt.com/temporal/tracks/first-workflow-java)**
+<CopyLink href="https://play.instruqt.com/temporal/invite/zxfg8rb7ygov" />
 
 <!--
+The link is the invite for every lab in this Deck: learners open it once and
+pick each lab's Track from there.
+
 The lab for Workflows, Activities, Workers and the Client: Your First Workflow,
 a money transfer. Learners start a transfer with no Worker and watch it wait,
 start the Worker and read the Event History in the Temporal UI, then crash the
@@ -229,14 +232,16 @@ minutes: 35
 heading: Labs
 ---
 
-- [Child Workflows](https://play.instruqt.com/temporal/tracks/child-workflows-java) · 15 min
-- [Continue-As-New](https://play.instruqt.com/temporal/tracks/continue-as-new-java) · 10 min
-- [Heartbeats](https://play.instruqt.com/temporal/tracks/heartbeats-java) · 10 min
+<CopyLink href="https://play.instruqt.com/temporal/invite/zxfg8rb7ygov" />
+
+- Child Workflows · 15 min
+- Continue-As-New · 10 min
+- Heartbeats · 10 min
 
 <!--
 The labs for the three sections just taught, in this order. Each is its own
-Track; the minutes are each lab's measured length, and each Track's time limit
-is 30.
+Track, and all of them sit behind the one invite link; the minutes are each
+lab's measured length, and each Track's time limit is 30.
 
 - **Child Workflows** (workshops/child-workflows): run one child, chain
   children five deep and follow a failure up from the bottom, fan out and watch
@@ -308,7 +313,7 @@ minutes: 25
 heading: "Lab: The Saga Pattern"
 ---
 
-**[play.instruqt.com/temporal/tracks/saga-java](https://play.instruqt.com/temporal/tracks/saga-java)**
+<CopyLink href="https://play.instruqt.com/temporal/invite/zxfg8rb7ygov" />
 
 <!--
 The Saga Workshop's lab (workshops/saga-order-fulfillment):

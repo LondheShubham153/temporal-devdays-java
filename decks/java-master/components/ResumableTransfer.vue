@@ -4,16 +4,18 @@
 
     <ResumableTransfer />
 
-  Slide clicks step through the four engineer actions (the slide needs
-  `clicks: 4`), so arrow keys and a clicker work; each button jumps to its
-  action, and the next one is outlined. Each step shows the CLI command an
+  Slide clicks step through the three engineer actions (the slide needs
+  `clicks: 3`), so arrow keys and a clicker work; each button jumps to its
+  action. The action just performed is outlined, so the button always matches
+  the terminal and the Events beside it; before the first click, a dashed
+  outline points at action 1. Each step shows the CLI command an
   engineer would run, its output, and the Events it adds. Workflow Task events are left out, as the UI's compact
   view does. Everything here matches the resumable package in snippets/
   (TransferWorkflowImpl.java, TransferActivitiesImpl.java) and what
   ResumableTest checks: one attempt on a non-retryable failure, a Query that
-  adds nothing to history, a malformed fix that is recorded but ignored, both
-  Signals in history, the Java SDK's default type names (TransferWorkflow,
-  ExecuteTransfer), and one Workflow run from start to finish.
+  adds nothing to history, a COMPLETED status at the end, the Java SDK's
+  default type names (TransferWorkflow, ExecuteTransfer), and one Workflow run
+  from start to finish.
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -38,7 +40,6 @@ const STARTED: Row[] = [
   { event: 'ActivityTaskStarted', detail: 'attempt 1', tone: 'plain' },
   { event: 'ActivityTaskFailed', detail: 'AccountNotFoundError · non-retryable', tone: 'fail' },
 ]
-const BAD_FIX: Row = { event: 'WorkflowExecutionSignaled', detail: 'retryWithCorrection "acct 1234"', tone: 'signal' }
 const GOOD_FIX: Row[] = [
   { event: 'WorkflowExecutionSignaled', detail: 'retryWithCorrection "12345678"', tone: 'signal' },
   { event: 'ActivityTaskScheduled', detail: 'ExecuteTransfer → 12345678', tone: 'plain' },
@@ -66,19 +67,14 @@ const STEPS: Step[] = [
     say: 'It tells you exactly where it is stuck. Look at the history: <strong>no new Events</strong>. A Query is a read.',
   },
   {
-    stage: 'parked', status: 'AWAITING_CORRECTION', account: '99999999', rows: [...STARTED, BAD_FIX], fresh: 1,
-    term: { cmd: signal('acct 1234'), out: 'Signal workflow succeeded' },
-    say: 'Typo under pressure. The Signal is <strong>recorded</strong>, but the handler validates the format and drops it. Still parked, no transfer attempted.',
-  },
-  {
-    stage: 'done', status: 'COMPLETED', account: '12345678', rows: [...STARTED, BAD_FIX, ...GOOD_FIX], fresh: GOOD_FIX.length,
+    stage: 'done', status: 'COMPLETED', account: '12345678', rows: [...STARTED, ...GOOD_FIX], fresh: GOOD_FIX.length,
     term: { cmd: signal('12345678'), out: 'Signal workflow succeeded' },
     say: 'The same Workflow wakes up and retries with your fix. <strong>One run, one history</strong>: the failure, your correction and the success, in order. The customer never re-entered anything.',
   },
 ]
 
 // The buttons name the action each click performs, and jump to it when pressed.
-const ACTIONS = ['Send the transfer', 'Query getStatus', 'Signal fix: "acct 1234"', 'Signal fix: "12345678"']
+const ACTIONS = ['Send the transfer', 'Query getStatus', 'Signal fix: "12345678"']
 
 const { $clicks, $page } = useSlideContext()
 const nav = useNav()
@@ -107,7 +103,7 @@ const badge = computed(() => ({ idle: 'Not started', parked: 'Running', done: 'C
         <button
           v-for="(label, i) in ACTIONS"
           :key="label"
-          :class="{ next: i === at, done: i < at }"
+          :class="{ current: i === at - 1, next: at === 0 && i === 0, done: i < at - 1 }"
           @click.stop="go(i + 1)"
         >
           <span class="n">{{ i + 1 }}</span>{{ label }}
@@ -186,9 +182,10 @@ button {
 }
 button:hover { background: rgb(154 128 255 / 35%); }
 button .n { display: inline-block; width: 1.1em; opacity: 0.6; font-variant-numeric: tabular-nums; }
-button.next { box-shadow: 0 0 0 2px var(--temporal-green); }
+button.current { box-shadow: 0 0 0 2px var(--temporal-green); }
+button.next { outline: 2px dashed var(--temporal-green); outline-offset: 1px; }
 button.done { opacity: 0.4; }
-button.reset { grid-column: span 2; text-align: center; background: none; border-color: var(--temporal-border); font-size: 0.6rem; }
+button.reset { text-align: center; background: none; border-color: var(--temporal-border); font-size: 0.6rem; }
 
 .term { background: #0b1020; flex: 1 1 auto; min-height: 4.2rem; }
 .cmd, .out {

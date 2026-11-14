@@ -11,7 +11,7 @@ later step fails, run the undos for the steps that already happened, in reverse.
 <!--
 Source: Temporal docs, Saga pattern page (Overview).
 
-Thirty seconds. Every slide from here to Related follows the Saga pattern page in
+Thirty seconds. Every slide from here to the pitfalls follows the Saga pattern page in
 the Temporal docs, in its order and its words. Only the code is different: it is
 the lab's order fulfillment Workflow, from the Saga Workshop in this repo
 (workshops/saga-order-fulfillment).

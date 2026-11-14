@@ -13,7 +13,8 @@ import { useSlideContext } from '@slidev/client'
 
 type Kind = 'worker' | 'command' | 'event' | 'task'
 type Pill = { icon: string; text: string; mono?: boolean; dim?: boolean }
-type Step = { kind: Kind; lane: number; pills: Pill[]; say: string }
+// `dx` nudges a step right of its slot when its pill is too wide for the gap.
+type Step = { kind: Kind; lane: number; pills: Pill[]; say: string; dx?: number }
 
 const LANES = [
   { icon: '⚙️', label: 'Worker' },
@@ -24,12 +25,12 @@ const LANE_Y = [62, 196, 300]
 const COMMAND_Y = 129
 
 const STEPS: Step[] = [
-  { kind: 'worker', lane: 0, pills: [{ icon: '▶️', text: 'chargeCard()', mono: true }], say: 'Your Workflow code calls the Activity' },
+  { kind: 'worker', lane: 0, pills: [{ icon: '▶️', text: 'activities.chargeCard()', mono: true }], say: 'Your Workflow calls the chargeCard Activity. Nothing runs yet: the call is a request' },
   { kind: 'command', lane: -1, pills: [{ icon: '📨', text: 'ScheduleActivityTask', mono: true }], say: 'The call becomes a Command, sent when the Workflow Task ends' },
   { kind: 'event', lane: 1, pills: [{ icon: '📝', text: 'ActivityTaskScheduled', mono: true }], say: 'The Service writes it down' },
-  { kind: 'task', lane: 2, pills: [{ icon: '🎫', text: 'Activity Task' }], say: 'An Activity Task waits on the queue' },
+  { kind: 'task', lane: 2, pills: [{ icon: '🎫', text: 'Activity Task' }], say: 'An Activity Task waits on the queue: the Activity Type, ChargeCard, and an Activity ID' },
   { kind: 'worker', lane: 0, pills: [{ icon: '🙋', text: 'poll' }], say: 'A Worker polls and takes it' },
-  { kind: 'worker', lane: 0, pills: [{ icon: '💳', text: 'charge' }], say: 'The Worker runs chargeCard' },
+  { kind: 'worker', lane: 0, dx: 30, pills: [{ icon: '💳', text: 'chargeCard runs', mono: true }], say: 'The Worker matches ChargeCard to the method it registered at startup, and runs it' },
   {
     kind: 'event',
     lane: 1,
@@ -40,7 +41,7 @@ const STEPS: Step[] = [
     say: 'The result is recorded. Started is written now too',
   },
   { kind: 'task', lane: 2, pills: [{ icon: '🎫', text: 'Workflow Task' }], say: 'A new Workflow Task wakes the Workflow' },
-  { kind: 'worker', lane: 0, pills: [{ icon: '🔁', text: 'replay → next line' }], say: 'Replay returns the result. The next line runs' },
+  { kind: 'worker', lane: 0, pills: [{ icon: '↩️', text: 'chargeCard() returns' }], say: 'A Worker takes the Workflow Task: activities.chargeCard() returns the result, and the next line runs' },
 ]
 
 const LEGEND: { kind: Kind; label: string }[] = [
@@ -59,7 +60,7 @@ function width(p: Pill): number {
 }
 function centre(i: number): { x: number; y: number } {
   const s = STEPS[i]
-  return { x: X0 + i * DX, y: s.lane < 0 ? COMMAND_Y : LANE_Y[s.lane] }
+  return { x: X0 + i * DX + (s.dx ?? 0), y: s.lane < 0 ? COMMAND_Y : LANE_Y[s.lane] }
 }
 function pillY(i: number, j: number): number {
   const n = STEPS[i].pills.length

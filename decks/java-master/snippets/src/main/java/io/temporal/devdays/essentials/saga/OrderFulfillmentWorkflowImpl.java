@@ -29,7 +29,7 @@ public class OrderFulfillmentWorkflowImpl implements OrderFulfillmentWorkflow {
                       .build())
               .build());
 
-  // slide: 17-saga-03-implementation.md "heading: Implementation"
+  // slide: 17-saga-03-implementation.md "# Implementation: the unwind"
   @Override
   public OrderResult fulfill(Order order) {
     Saga saga =

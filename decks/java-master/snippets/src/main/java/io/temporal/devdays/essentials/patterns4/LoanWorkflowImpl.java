@@ -11,7 +11,7 @@ public class LoanWorkflowImpl implements LoanWorkflow {
           LoanActivities.class,
           ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofSeconds(30)).build());
 
-  // slide: 04-design-patterns.md "Keep it in the Workflow if it… coordinates Activities"
+  // slide: 05-workflows.md "Keep it in the Workflow if it… coordinates Activities"
   @Override
   public Decision adjudicate(Applicant applicant) {
     CreditCheck creditCheck = activities.runCreditCheck(applicant);

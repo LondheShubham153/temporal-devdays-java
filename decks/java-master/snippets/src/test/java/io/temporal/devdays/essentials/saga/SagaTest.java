@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowFailedException;
 import io.temporal.client.WorkflowOptions;
-import io.temporal.devdays.essentials.deck.Slides;
 import io.temporal.devdays.essentials.saga.TitleTransfer.TitleActivitiesImpl;
 import io.temporal.devdays.essentials.saga.TitleTransfer.TitleOrder;
 import io.temporal.devdays.essentials.saga.TitleTransfer.TitleTransferWorkflow;
@@ -146,14 +145,6 @@ class SagaTest {
         List.of("reserve" + k, "charge" + k, "release" + k),
         Ledger.entries(o.orderId()),
         WORKFLOW + ": setContinueWithError(true) means a failed refund does not stop the release");
-  }
-
-  @Test
-  void theUnwindSlideShowsTheSameCodeAsTheWalkthrough() {
-    assertEquals(
-        Slides.slideCode("17-saga-03-implementation.md", "heading: Implementation"),
-        Slides.slideCode("17-saga-03-implementation.md", "# Implementation: the unwind"),
-        "17-saga-03-implementation.md: the unwind slide must show the walkthrough's code");
   }
 
   @Test

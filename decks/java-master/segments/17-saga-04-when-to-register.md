@@ -41,3 +41,81 @@ exist before the step, and the step had better be atomic.
 Code: snippets/src/main/java/io/temporal/devdays/essentials/saga/TitleTransfer.java
 (no slide shows it; SagaTest runs it).
 -->
+
+---
+layout: code-walkthrough
+heading: A compensation Activity
+notes:
+  - "An undo is an ordinary <strong>Activity</strong>: it calls the payment API to reverse the charge"
+  - "An <strong>idempotency key</strong>, because the undo will be retried. Two calls, one refund"
+  - "The forward step"
+  - "It gets a <strong>deadline</strong>: the customer is waiting, so after 2 minutes we give up and roll back"
+  - "The undo"
+  - "No deadline, no attempt cap, <strong>no Retry Policy at all</strong>: the defaults retry forever, with backoff"
+---
+
+::code::
+
+```java {all|2-6|4|9-15|14|17-22|20-22}
+// PaymentActivitiesImpl.java
+@Override
+public void refundPayment(Order order) {
+  String idempotencyKey = "refund-" + order.orderId();
+  payments.refund(order.orderId(), idempotencyKey);
+}
+
+// ChargeThenRefundWorkflowImpl.java
+private final PaymentActivities charges =
+    Workflow.newActivityStub(
+        PaymentActivities.class,
+        ActivityOptions.newBuilder()
+            .setStartToCloseTimeout(Duration.ofSeconds(10))
+            .setScheduleToCloseTimeout(Duration.ofMinutes(2))
+            .build());
+
+private final PaymentActivities refunds =
+    Workflow.newActivityStub(
+        PaymentActivities.class,
+        ActivityOptions.newBuilder()
+            .setStartToCloseTimeout(Duration.ofSeconds(10))
+            .build());
+```
+
+<!--
+Code: snippets/src/main/java/io/temporal/devdays/essentials/sagacompensation/PaymentActivitiesImpl.java
+and ChargeThenRefundWorkflowImpl.java, run by SagaCompensationTest: the refund
+endpoint is down for three attempts, the fourth succeeds, and the customer is
+refunded once. Two stubs over one `@ActivityInterface`, because each gets its
+own `ActivityOptions`: `charges` for the forward step, `refunds` for the undo.
+
+The question this answers, because someone always asks it: "if the API is
+down, wouldn't the compensation fail too?" Yes, at first, and that is fine.
+
+- **Build 1 - the Activity.** A compensation is not special to Temporal. It is
+  an Activity like any other, that happens to undo something.
+- **Build 2 - the key.** The undo will be retried, maybe many times, and an
+  attempt can succeed at the payment API and still time out on the way back.
+  The idempotency key makes the repeat harmless.
+- **Builds 3 and 4 - the forward step has a deadline.**
+  `setScheduleToCloseTimeout` bounds every attempt and retry together. The
+  customer is waiting, so after two minutes the charge gives up, and the Saga
+  rolls back.
+- **Builds 5 and 6 - the undo has none.** No `setScheduleToCloseTimeout`, and
+  no `setRetryOptions` at all: the default Retry Policy has unlimited attempts,
+  so Temporal keeps retrying with backoff (1 second, doubling, capped at 100
+  seconds between attempts) whether the API is back in ten minutes or two days.
+  To hit a struggling API less often, raise `setMaximumInterval`; that spaces
+  the attempts out without ever giving up. The Workflow waits durably; nothing
+  is lost. A bill collector who never gets tired: the API can hide, but not
+  forever.
+
+Why the asymmetry: giving up on a forward step costs you a sale. Giving up on
+an undo leaves a ghost charge on a customer's card, which is worse than being
+slow.
+
+If the API is gone for good (the vendor went out of business), retrying will
+never succeed, and that is where a human comes in. Alert on attempts that have
+been failing for hours; the Web UI shows the attempt count and the last error
+on the pending Activity. Fix the cause, or complete it by hand, and the
+Workflow carries on.
+-->

@@ -6,7 +6,7 @@ import io.temporal.worker.Worker;
 import io.temporal.worker.WorkerFactory;
 
 /**
- * The Worker for the Resumable Activity demo in 17b-patterns-and-anti-patterns.md. Start a dev
+ * The Worker for the Resumable Activity demo in 11-updates.md. Start a dev
  * server ({@code temporal server start-dev}), then from decks/java-master/snippets:
  *
  * <pre>

@@ -4,207 +4,239 @@ layout: section
 
 <ZiggyHero scene="juggle">
 
-# Business logic is complex
+# A simple feature
 
-One support ticket, three paths, and everything you write around them.
+Let customers send money. How hard can it be?
 
 </ZiggyHero>
 
 <!--
-Source: PPT slides 4-19.
+The arc of this segment: a feature that fits in two lines, everything
+production does to it, the plumbing you write in response, and then the same
+two lines on Temporal. Everything after this segment is a consequence of that
+last part.
 
-The arc of this segment: show a business process that fits on an index card,
-show the code it actually takes to run it reliably, then show that code
-disappear. Everything after this segment is a consequence of the last slide.
-
-The original opened with a photo of the flow sketched by hand on a hotel
-notepad. It was dropped here because the notepad carries a brand. If you have
-your own sketch of a flow, use it: the point is that the business logic fits on
-a card.
+One example the whole way through: a bank transfer. The Workflows segment and
+the first lab build on the same transfer, so nothing here is thrown away.
 -->
 
 ---
 layout: default
 ---
 
-# One support ticket
+# The feature request
 
-<div class="ticket-flow">
-<div class="path">
-<p class="path-head">Low priority</p>
-<ol>
-<li><code>sendAutoResponse</code></li>
-<li><code>searchKnowledgeBase</code></li>
-<li class="branch">Solution found?<span><b>Yes:</b> <code>notifyCustomer</code></span><span><b>No:</b> <code>assignAgent</code>, <code>resolveTicket</code></span></li>
-</ol>
+<div class="request">
+<p class="request-head">As a customer, I want to send money to another account.</p>
+<div class="steps">
+<div class="step"><span class="n">1</span><span><strong>Withdraw</strong> $500 from Alice</span></div>
+<span class="arrow">→</span>
+<div class="step"><span class="n">2</span><span><strong>Deposit</strong> $500 to Bob</span></div>
 </div>
-<div class="path">
-<p class="path-head">Medium priority</p>
-<ol>
-<li><code>assignAgent</code></li>
-<li><code>investigateIssue</code></li>
-<li class="branch">Needs escalation?<span><b>Yes:</b> <code>escalateToEngineering</code></span><span><b>No:</b> <code>resolveTicket</code></span></li>
-</ol>
+<p class="request-done"><strong>Done when:</strong> the money left one account and arrived in the other.</p>
 </div>
-<div class="path">
-<p class="path-head">High priority</p>
-<ol>
-<li><code>assignAgent</code> (senior)</li>
-<li><code>escalateToEngineering</code></li>
-<li><code>applyUrgentFix</code></li>
-<li><code>notifyCustomer</code></li>
-<li><code>notifyManagement</code></li>
-</ol>
-</div>
-</div>
-
-<p class="ticket-end">Every path ends in <strong>Ticket resolved</strong>.</p>
 
 <style scoped>
-.ticket-flow {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.25rem;
-  margin-top: 1rem;
-}
-.path {
+.request {
+  margin-top: 1.5rem;
   border: 1px solid var(--temporal-border-hi);
   border-radius: 0.6rem;
-  padding: 0.8rem 1rem;
+  padding: 1.5rem 1.75rem;
 }
-.path-head {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.8rem;
+.request-head {
+  font-size: 1.3rem;
+  margin: 0 0 1.5rem !important;
+  color: var(--temporal-text-strong);
+}
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+.step {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  border: 1px solid var(--temporal-border-hi);
+  border-radius: 0.5rem;
+  padding: 0.9rem 1rem;
+  font-size: 1.05rem;
+}
+.step .n {
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  background: rgba(89, 253, 160, 0.15);
   color: var(--temporal-green);
-  margin: 0 0 0.5rem !important;
+  font-weight: 600;
 }
-.path ol {
-  margin: 0;
-  padding-left: 1.2rem;
+.arrow {
+  font-size: 1.6rem;
+  color: var(--temporal-text);
 }
-.path li {
-  font-size: 0.95rem;
-  margin: 0.3rem 0;
-}
-/* The theme sizes inline code for prose; in these narrow columns the longer
-   Activity names would overrun their box. */
-.path code {
-  font-size: 0.72rem;
-  white-space: nowrap;
-}
-.branch span {
-  display: block;
-  font-size: 0.85rem;
-  margin-top: 0.15rem;
-}
-.ticket-end {
-  margin-top: 1.25rem;
-  text-align: center;
+.request-done {
+  margin: 1.5rem 0 0 !important;
+  font-size: 1rem;
 }
 </style>
 
 <!--
-Source: PPT slide 5. The original was a flowchart image; it is redrawn here as
-three columns.
-
-Walk it left to right, fast. Low priority: auto-respond, search the knowledge
-base, hand to an agent if nothing matches. Medium: assign an agent, investigate,
-escalate if needed. High: senior agent, straight to engineering, urgent fix,
-notify customer and management.
-
-Nobody in the room would call this hard. That is the point. Hold that thought
-for the next slide.
--->
-
----
-layout: big-stat
-value: 268
-unit: lines
-caption: The same flow, written the obvious way
----
-
-One class per team, one method that branches on priority, and a sleep between
-every step. It runs. It is also the version that exists before anyone asks what
-happens when a step fails.
-
-<!--
-Source: PPT slide 6.
-
-The original showed the whole file as an image, deliberately too small to read:
-the size is the argument. 268 lines, for the flow on the previous slide. The
-line counts on this slide and two slides on are from the original deck's
-reference implementation of the ticket flow; the exact number matters less than
-the ratio you are about to see.
-
-The original deck's speaker note says the code was generated by an LLM, which
-is worth saying: this is what "just write it" looks like today, and it is a
-perfectly reasonable first draft.
--->
-
----
-layout: default
----
-
-# Unspoken requirements…
-
-The flow never says them. Production always does.
-
-- **Retries and checkpoints.** Tightly coupled components, zero fault tolerance.
-- **Visibility.** No audit trail, no in-flight telemetry. Logs are the only
-  thing you have when it breaks.
-- **Execution guarantees.** Data lost on failure or restart. No way to replay
-  what happened.
-
-<!--
-Source: PPT slide 8.
-
-Ask the room which of these they have been paged for. Someone always has a
-story about the third one: a process restarted mid-ticket and the customer got
-two emails, or none.
-
-These three are the whole value proposition of the next hour. Do not name
-Temporal yet.
--->
-
----
-layout: center
----
-
-# So let's account for those
-
-<!--
-Source: PPT slide 9. A breath before the code. Three seconds, then click on.
+Read it like a product manager would. One sentence, two steps, one acceptance
+criterion. Ask the room how long they would estimate. Someone will say an
+afternoon. Hold onto that number.
 -->
 
 ---
 layout: code-stack
-heading: The naive version
+heading: The happy path
 proseMax: 30
 ---
 
 ::code::
 
 ```java
-return fulfillmentService.fulfill(orderId);
+public void transfer(Transfer t) {
+  bank.withdraw(t.fromAccount(), t.amount());
+  bank.deposit(t.toAccount(), t.amount());
+}
 ```
 
 ::default::
 
-One line. The whole business requirement, and nothing else.
-
-It works right up until the service is down, slow, rate limited, or the process
-is killed halfway through.
+Two lines, and both of them are the feature. The demo works, the tests pass,
+the PR is approved. Ship it?
 
 <!--
-Source: PPT slide 10. Code: snippets/src/main/java/io/temporal/devdays/essentials/why/HandRolledRetry.java,
-with the next two slides.
+Code: snippets/src/main/java/io/temporal/devdays/essentials/why/HandRolled.java,
+with the retry helper on the next slide. `bank` is the bank's API client.
 
-Let it sit. Ask what is wrong with it. Someone says "no error handling," and
-that is the cue for the next slide.
+Let it sit. This is what everyone writes first, and it is correct: it is
+exactly the business requirement. Ask "ship it?" and wait. Someone always says
+"what about errors?" That is the cue for the next slide.
+-->
 
-Name the failure people forget: it is not only that the call can throw. The
-process holding this line can die, and nothing remembers the request was made.
+---
+layout: default
+---
+
+# Then it meets production
+
+<div class="failures">
+<div v-click class="failure"><p class="what">The bank's API is down</p><p class="then">Every transfer throws for ten minutes. Or hangs, and never returns.</p></div>
+<div v-click class="failure"><p class="what">The process crashes between the two lines</p><p class="then">Alice was debited. Bob was never credited.</p></div>
+<div v-click class="failure"><p class="what">A power outage, or a deploy</p><p class="then">The node goes away mid-transfer, and so does everything in memory.</p></div>
+<div v-click class="failure"><p class="what">A race condition</p><p class="then">Alice double-taps Send. Two requests, two transfers.</p></div>
+<div v-click class="failure"><p class="what">A bug in the deposit code</p><p class="then">Every transfer since the release is stuck halfway.</p></div>
+<div v-click class="failure"><p class="what">Insufficient funds</p><p class="then">Not an outage. Retrying will never fix it.</p></div>
+</div>
+
+<style scoped>
+.failures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.failure {
+  border: 1px solid var(--temporal-border-hi);
+  border-left: 3px solid #ff6b6b;
+  border-radius: 0.5rem;
+  padding: 0.8rem 1rem;
+}
+.what {
+  font-weight: 600;
+  color: var(--temporal-text-strong);
+  margin: 0 0 0.4rem !important;
+  font-size: 1rem;
+}
+.then {
+  margin: 0 !important;
+  font-size: 0.88rem;
+}
+</style>
+
+<!--
+One click per failure. For each, ask the room whether they have been paged for
+it. The second one always gets a story.
+
+- **The bank is down or slow.** The call throws, or worse, never returns.
+- **A crash between the lines.** The money left Alice and never reached Bob.
+  This is the one to land; the next slide is only this.
+- **Power outage, or a deploy.** A rolling deploy is a planned crash. Whatever
+  was in memory is gone.
+- **A race.** A double tap, a mobile retry on a flaky connection, a load
+  balancer replaying a request: two transfers.
+- **A bug.** Not the network: your code. You fix it in an hour. What happens to
+  the transfers that failed in that hour?
+- **Insufficient funds.** The odd one out. Retrying makes it worse, not better.
+  Some errors must never be retried.
+-->
+
+---
+layout: center
+class: text-center
+---
+
+<p style="font-size: 2.4rem; font-weight: 200; line-height: 1.3">The withdrawal succeeded.<br />Then the process died.</p>
+
+<p v-click style="font-size: 3rem; font-weight: 300; margin-top: 2rem; color: #ff6b6b">$500 left Alice. It never reached Bob.</p>
+
+<!--
+Say the first line, pause, click. Nothing in the two-line version remembers
+that the withdrawal happened. When the process comes back, it has no idea
+there is a transfer to finish.
+
+This is not an edge case at scale. Every deploy kills processes mid-request.
+-->
+
+---
+layout: default
+---
+
+# And the questions start
+
+<div class="questions">
+<div class="q"><strong>When do we retry?</strong><span>A 503? A timeout? A connection reset?</span></div>
+<div class="q"><strong>When don't we?</strong><span>Insufficient funds. A closed account.</span></div>
+<div class="q"><strong>How many times?</strong><span>Three? Ten? Until it works?</span></div>
+<div class="q"><strong>How long between attempts?</strong><span>Exponential backoff? With jitter? Capped at what?</span></div>
+<div class="q"><strong>Where do we remember how far we got?</strong><span>So a restart does not withdraw twice.</span></div>
+<div class="q"><strong>Who finds out when it never succeeds?</strong><span>And how do they fix it?</span></div>
+</div>
+
+<style scoped>
+.questions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1.5rem;
+  margin-top: 1.25rem;
+}
+.q {
+  border: 1px solid var(--temporal-border-hi);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+.q strong {
+  display: block;
+  color: var(--temporal-text-strong);
+  font-size: 1.02rem;
+}
+.q span {
+  font-size: 0.88rem;
+}
+</style>
+
+<!--
+Every one of these is a real decision, and the two-line function answers none
+of them. Read the left column fast, then slow down on the last two: they are
+not about retries at all, and they are the ones that turn a function into a
+system.
+
+None of these questions is about sending money. All of them have to be answered
+before you can ship it.
 -->
 
 ---
@@ -215,178 +247,136 @@ proseMax: 30
 
 ::code::
 
-```java {all|1|3|4-5}
-for (int attempt = 0; attempt < 4; attempt++) {
-  try {
-    return fulfillmentService.fulfill(orderId);
-  } catch (Exception e) {
-    Thread.sleep(5000);
-  }
-}
-```
-
-::default::
-
-Four attempts, five seconds apart. Fixed count, fixed delay, no backoff, no
-jitter, and no record anywhere of what was tried.
-
-<!--
-Source: PPT slide 11.
-
-- **Build 1 -** four, because four felt right. Nobody tuned this.
-- **Build 2 -** the one line that is the business requirement, now buried two
-  levels deep.
-- **Build 3 -** the catch swallows the error, and the sleep is a hard five
-  seconds whether the service needs 50ms or 50 seconds.
-
-If the process dies inside this loop, every attempt so far is lost and nobody
-knows how far it got. And after the fourth failure the loop simply ends. The
-compiler insists on a return after it, and what usually gets written there is
-`return null`, which is its own bug, found later by somebody else. Point at
-that if someone notices.
--->
-
----
-layout: code-stack
-heading: So you add real backoff
-proseMax: 30
----
-
-::code::
-
-```java {all|2-3|8-10|14}
-FulfillmentResult fulfillWithRetry(String orderId) throws InterruptedException {
-  long delay = 1000;
-  int maxRetries = 3;
-  for (int attempt = 0; attempt < maxRetries; attempt++) {
+```java {all|7-8|10|11-12|2-3}
+void withRetry(Runnable call) throws InterruptedException {
+  long delay = 1_000;
+  for (int attempt = 1; ; attempt++) {
     try {
-      return fulfillmentService.fulfill(orderId);
-    } catch (Exception e) {
-      if (attempt < maxRetries - 1) {
-        Thread.sleep(delay);
-        delay = Math.min(delay * 2, 30_000);
-      }
+      call.run();
+      return;
+    } catch (InsufficientFundsException e) {
+      throw e;
+    } catch (RuntimeException e) {
+      if (attempt == 5) throw e;
+      Thread.sleep(delay + ThreadLocalRandom.current().nextLong(250));
+      delay = Math.min(delay * 2, 30_000);
     }
   }
-  throw new IllegalStateException("Failed after too many attempts");
 }
 ```
 
 ::default::
 
-A dozen lines of retry policy wrapped around one line of business logic. Still
-in memory, still lost on restart, still no jitter.
+Fifteen lines to answer three of the questions. All of it in memory: when the
+process dies, so do the attempt count, the delay, and the transfer.
 
 <!--
-Source: PPT slide 12.
+Code: HandRolled.java. `Thread.sleep` parks a thread, and the wait lives only
+in that thread. It is never allowed inside a Workflow; when a Workflow needs
+to wait, `Workflow.sleep` is a durable Timer.
 
-- **Build 1 -** the tuning knobs, now hard-coded constants someone will have to
-  find and change under pressure.
-- **Build 2 -** the backoff itself, doubling with a ceiling. This is the part
-  people are proud of. It is also identical in every codebase and written
-  slightly wrong in most of them.
-- **Build 3 -** after all that, it gives up. The caller has no idea how many
-  attempts happened or why.
+- **Build 1 - when not to retry.** Insufficient funds is final. Every new
+  error type the bank invents is another line here.
+- **Build 2 - how many times.** Five, because five felt right. Nobody tuned it.
+- **Build 3 - how long between.** Doubling, capped at 30 seconds, with jitter so
+  a thousand failed transfers do not all retry in the same millisecond. This is
+  the part people are proud of. Every service in the company has its own copy,
+  slightly different.
+- **Build 4 - where the state lives.** A local variable. The retry loop is the
+  first thing to die when the process does.
 
-`Thread.sleep` here parks a thread, and the wait lives only in that thread.
-Plant this now, because it matters in about ten slides: in real Workflow code
-you would not write this loop at all, because retries are policy. When a
-Workflow does need to wait, `Workflow.sleep` is a durable Timer that survives
-the process dying. `Thread.sleep` is never allowed inside a Workflow.
-
-The honest summary: this is a good implementation of the wrong idea. Every
-service in the company has its own copy, and none of them survive a restart.
+And it answers none of the last three questions on the previous slide.
 -->
 
 ---
 layout: code-walkthrough
-heading: The non-Temporal version
+heading: The plumbing version
 notes:
-  - A <strong>distributed lock</strong>, so two instances never run one order. Die holding it and everyone waits out the TTL
+  - A <strong>distributed lock</strong>, so a double-tap never runs one transfer twice. Die holding it and the transfer waits out the TTL
   - Your own <strong>state table</strong>. Reload progress so a restart skips finished steps
-  - A <strong>checkpoint</strong> around every step. Crash between the reserve and the save, and the stock is held twice
-  - The backoff loop from the last slide, wrapped round every call with <code>withRetry</code>
-  - <strong>Timeouts</strong>, hand-rolled per call with <code>withTimeout</code>
+  - A <strong>checkpoint</strong> around every step. Crash between the withdraw and the save, and Alice is debited twice
+  - The retry helper from the last slide, <code>withRetry</code>, round every call
+  - A <strong>timeout</strong> on every call with <code>withTimeout</code>, so a hung bank cannot hang you
   - An <strong>audit trail</strong> you write, and nobody reads until the incident
   - Failures parked for a human, in a <strong>dead-letter queue</strong> you also run
-  - And a <strong>recovery cron</strong> for the orders that get stuck anyway
+  - And a <strong>recovery cron</strong> for the transfers that get stuck anyway
 ---
 
 ::code::
 
-```java {all|2-3|5|6-9|7|11|13|17-18|24}
-void fulfillOrder(String orderId) {
-  Lock lock = locks.acquire("order:" + orderId, Duration.ofSeconds(30));
+```java {all|2-3|5|6-9|7|7|9|17-18|24}
+void transfer(Transfer t) {
+  Lock lock = locks.acquire(t.transferId(), Duration.ofSeconds(30));
   if (lock == null) return;
   try {
-    OrderState state = db.loadOrderState(orderId);
-    if (!state.isDone(Step.RESERVED)) {
-      withRetry(() -> inventory.reserve(orderId));
-      db.saveStep(orderId, Step.RESERVED);
+    TransferState state = db.loadTransfer(t.transferId());
+    if (!state.isDone(Step.WITHDRAWN)) {
+      withRetry(() -> withTimeout(() -> bank.withdraw(t.fromAccount(), t.amount())));
+      db.saveStep(t.transferId(), Step.WITHDRAWN);
+      audit.append(t.transferId(), "withdrawn");
     }
-    if (!state.isDone(Step.CHARGED)) {
-      String chargeId = withTimeout(() -> payments.charge(orderId), Duration.ofSeconds(10));
-      db.saveStep(orderId, Step.CHARGED, chargeId);
-      audit.append(orderId, "payment-charged", chargeId);
+    if (!state.isDone(Step.DEPOSITED)) {
+      withRetry(() -> withTimeout(() -> bank.deposit(t.toAccount(), t.amount())));
+      db.saveStep(t.transferId(), Step.DEPOSITED);
+      audit.append(t.transferId(), "deposited");
     }
-    // ...and the same again for shipping
   } catch (Exception e) {
-    db.markFailed(orderId, e.toString());
-    deadLetters.push(orderId);
+    db.markFailed(t.transferId(), e.toString());
+    deadLetters.push(t.transferId());
   } finally {
     lock.release();
   }
 }
 
-// RecoveryJob.java: a cron that finds orders stuck mid-flow and re-runs them
+// RecoveryJob.java: a cron that finds transfers stuck halfway and re-runs them
 ```
 
 <!--
 Illustrative, not compiled: the locks, state table, audit log and dead-letter
-queue are the services you would have to build, so there is nothing to compile
-against. It is `fulfillOrder`, the call from the last three slides, as a
-three-step process (reserve, charge, ship) written to survive production
-without Temporal. "The Temporal version"
-shows the same function three slides on; the two are meant to be compared.
+queue are services you would have to build, so there is nothing to compile
+against. It is the happy path, written to survive production without Temporal. "The Temporal version" a few slides on is the same transfer;
+the two are meant to be compared.
 
-Each bubble is one of the unspoken requirements, paid for by hand:
+Each bubble is one of the questions, answered by hand:
 
-- **Build 1 - the lock.** Two pods pick up the same order; without it, both
-  run it. With it, a pod that crashes holding the lock stalls the order for
-  the TTL.
-- **Build 2 - the state table.** The process remembers nothing, so progress
-  lives in a table you design, migrate and back up.
+- **Build 1 - the lock.** The race condition. Two requests for one transfer;
+  with the lock, only one runs. A pod that crashes holding it stalls the
+  transfer for the TTL.
+- **Build 2 - the state table.** "Where do we remember how far we got?" In a
+  table you design, migrate and back up.
 - **Build 3 - the checkpoint.** Do the step, then record it. The gap between
-  the two lines is where double reservations come from.
-- **Build 4 - the retry.** The backoff from the previous slide, now a helper
-  wrapped round every call.
+  the two lines is exactly the crash from three slides ago, moved one line down.
+  Closing it needs idempotency keys on the bank calls too.
+- **Build 4 - the retry.** The helper from the last slide.
 - **Build 5 - the timeout.** Another helper. Pick a number for every call.
-- **Build 6 - the audit trail.** The visibility requirement, as rows you write
-  yourself.
-- **Build 7 - failure handling.** Something has to catch what the retries
-  could not fix, and someone has to drain it.
+- **Build 6 - the audit trail.** So someone can answer "what happened to my
+  money?" Rows you write yourself.
+- **Build 7 - failure handling.** "Who finds out when it never succeeds?" A
+  queue, and someone to drain it.
 - **Build 8 - recovery.** For everything above that still goes wrong: a second
   program whose only job is finding the first one's stuck work.
 
-That is two of the three steps. The next slide is what a whole flow costs.
+The bug from the failures slide is still not handled: a transfer that hit the
+bad deposit code is now in the dead-letter queue, and someone replays it by
+hand after the fix ships.
 -->
 
 ---
 layout: default
 ---
 
-# Most of the code is not the business
+# Most of the code is not the feature
 
 <div class="grid grid-cols-2 gap-10 mt-8">
 <div>
-<p class="loc-eyebrow">Naive</p>
-<p class="loc-count">268 <span>lines</span></p>
-<p><strong>75% business logic</strong>, not much scaffolding. It also does not survive a single failure.</p>
+<p class="loc-eyebrow">Happy path</p>
+<p class="loc-count">4 <span>lines</span></p>
+<p><strong>Two of them are the feature.</strong> It does not survive a single failure.</p>
 </div>
 <div v-click>
-<p class="loc-eyebrow">Exhaustive</p>
-<p class="loc-count">1,063 <span>lines</span></p>
-<p><strong>29% business logic.</strong> State persistence, retries, timeouts, audit history, recovery on restart.</p>
+<p class="loc-eyebrow">Production-ready</p>
+<p class="loc-count">35+ <span>lines</span></p>
+<p><strong>The same two lines of feature,</strong> plus a lock, a state table, an audit log, a dead-letter queue, a recovery cron, and a retry helper to maintain.</p>
 </div>
 </div>
 
@@ -412,19 +402,13 @@ layout: default
 </style>
 
 <!--
-Source: PPT slides 13-14. The original showed both files as images too small to
-read; the numbers carry the same argument.
+The numbers are the last three slides: the happy path is 4 lines; the plumbing
+version is 22 and the retry helper 15. That is before `timeout`, the cron,
+the queue consumer and three table schemas, hence the plus.
 
-Same flow, twice. The left is the obvious version. The right is what it takes
-to add the unspoken requirements by hand: a state table, a retry executor, an
-event log, locking, recovery on startup.
-
-Four times the code, and the business logic went from three quarters of the
-file to under a third. The original deck had a big "I HATE THIS!!!" stamped
-across it. Feel free to say it out loud.
-
-The question to leave hanging: where did the other 71% go when we used
-Temporal? The answer is the next slide.
+Remember the afternoon estimate from the feature request? This is the version
+that takes a sprint, and it is still the part of the system nobody wants to
+touch.
 -->
 
 ---
@@ -432,108 +416,291 @@ layout: center
 class: text-center
 ---
 
-<p style="font-size: 2.6rem; font-weight: 200; line-height: 1.2">Most platforms push complexity onto you.</p>
+<p style="font-size: 2.6rem; font-weight: 200; line-height: 1.2">What if you only wrote the happy path?</p>
 
-<p v-click style="font-size: 3.2rem; font-weight: 300; margin-top: 2rem; color: var(--temporal-green)">Temporal absorbs it.</p>
+<p v-click style="font-size: 3.2rem; font-weight: 300; margin-top: 2rem; color: var(--temporal-green)">That is Temporal.</p>
 
 <!--
-Source: PPT slide 19. Say it and let it land. This is the thesis of the day.
+The thesis of the day. Say the question and let it hang, then click.
+
+If someone says it sounds like magic, agree that it feels that way and promise
+the mechanism: Event History and replay, in the concepts and Workflows
+segments. Developers distrust magic, so do not leave it there.
 -->
 
 ---
 layout: code-walkthrough
 heading: The Temporal version
 notes:
-  - The same three steps as The non-Temporal version. No lock, no state table, no retry loop, no audit rows
-  - Retries, backoff and timeouts become <strong>configuration</strong>, declared once, by the caller
-  - The Workflow calls <code>fulfillOrder</code>. The business requirement is one line again
+  - Each step is its own <strong>Activity</strong>. Just the call. No lock, no retry loop, no checkpoint
+  - "<strong>Timeouts</strong> are configuration: a hung bank call is abandoned and retried after 10 seconds"
+  - "<strong>When not to retry</strong> is configuration too. Everything else retries, with exponential backoff, by default"
+  - The Workflow is the <strong>happy path</strong>. The same two lines
 ---
 
 ::code::
 
-```java {all|4-8|13-19|21-24}
-// FulfillmentActivitiesImpl.java
-public class FulfillmentActivitiesImpl implements FulfillmentActivities {
+```java {all|2-12|20|21-24|27-31}
+// BankActivitiesImpl.java
+public class BankActivitiesImpl implements BankActivities {
   @Override
-  public String fulfillOrder(String orderId) {
-    inventory.reserve(orderId);
-    String chargeId = payments.charge(orderId);
-    return shipping.ship(orderId, chargeId);
+  public void withdraw(Transfer t) {
+    bank.withdraw(t.fromAccount(), t.amount());
+  }
+
+  @Override
+  public void deposit(Transfer t) {
+    bank.deposit(t.toAccount(), t.amount());
   }
 }
 
-// FulfillmentWorkflowImpl.java
-public class FulfillmentWorkflowImpl implements FulfillmentWorkflow {
-  private final FulfillmentActivities activities =
+// TransferWorkflowImpl.java
+public class TransferWorkflowImpl implements TransferWorkflow {
+  private final BankActivities activities =
       Workflow.newActivityStub(
-          FulfillmentActivities.class,
+          BankActivities.class,
           ActivityOptions.newBuilder()
               .setStartToCloseTimeout(Duration.ofSeconds(10))
-              .setRetryOptions(RetryOptions.newBuilder().setMaximumAttempts(4).build())
+              .setRetryOptions(
+                  RetryOptions.newBuilder()
+                      .setDoNotRetry(InsufficientFundsException.class.getName())
+                      .build())
               .build());
 
   @Override
-  public String fulfill(String orderId) {
-    return activities.fulfillOrder(orderId);
+  public void transfer(Transfer t) {
+    activities.withdraw(t);
+    activities.deposit(t);
   }
 }
 ```
 
 <!--
-Source: PPT slides 15-16. Reworked to mirror "The non-Temporal version":
-the same `fulfillOrder`, the same three steps. Code:
-snippets/src/main/java/io/temporal/devdays/essentials/why/FulfillmentActivitiesImpl.java
-and FulfillmentWorkflowImpl.java. The two interfaces they implement,
-`FulfillmentActivities` (`@ActivityInterface`) and `FulfillmentWorkflow`
-(`@WorkflowInterface`), are one method each and left off the slide.
+Code: snippets/src/main/java/io/temporal/devdays/essentials/why/BankActivitiesImpl.java
+and TransferWorkflowImpl.java, run by WhyTemporalTest: a bank that fails the
+deposit twice still completes the transfer with one withdrawal, and
+insufficient funds fails at once without a retry. The two interfaces they
+implement, `BankActivities` (`@ActivityInterface`) and `TransferWorkflow`
+(`@WorkflowInterface`), are two methods and one, and left off the slide.
 
-This is the payoff. Deliver it slowly, and put "The non-Temporal version" back in their heads first:
-the lock, the state table, a checkpoint round every step, `withRetry`,
-`withTimeout`, the audit rows, the dead-letter queue, the recovery cron.
+Deliver it slowly, with the plumbing version in their heads.
 
-- **Build 1 - the Activity.** `fulfillOrder` with only the business left in
-  it: reserve, charge, ship. If a service fails, the Activity throws; that is
-  the whole of its error handling.
-- **Build 2 - the policy.** The same knobs from the backoff slide, except now
-  they are declarative, they live in one place, and the defaults are sensible:
-  a 1s initial interval that doubles to a 100s ceiling, with unlimited
-  attempts. `setStartToCloseTimeout` bounds each attempt, not the sequence; to
-  bound the whole thing, set `setScheduleToCloseTimeout` or
-  `setMaximumAttempts`. Most people can leave `setRetryOptions` off entirely.
-- **Build 3 - the Workflow.** It calls `fulfillOrder`, and the call is the one
-  line from the naive slide again. The Workflow knows only the Activity's
-  interface; the stub `Workflow.newActivityStub` returns turns each call into a
-  scheduled Activity Task. Go
-  down the non-Temporal version's bubbles and say where each went: the lock is the Workflow
-  ID, the state table and checkpoints are Event History, retries and timeouts
-  are the policy, the audit trail is the Web UI, and the recovery cron is a
-  Worker picking the Workflow up where it stopped.
-
-If someone spots it: a retry reruns the whole Activity, so a failed charge
-means the reservation is made again. Each service call has to be idempotent by
-order ID, or each step becomes its own Activity so a retry repeats only the
-step that failed. The design-patterns segment covers when to split.
+- **Build 1 - the Activities.** The two bank calls, and nothing else. If the
+  bank fails, the Activity throws; that is all of its error handling.
+- **Build 2 - the timeout.** `setStartToCloseTimeout` bounds each attempt. A call
+  that hangs is abandoned and retried.
+- **Build 3 - when not to retry.** One option. `setDoNotRetry` takes failure
+  types, and an exception thrown from an Activity has its class name as its
+  type. The defaults answer the rest: a 1
+  second first retry, doubling, capped at 100 seconds, unlimited attempts.
+- **Build 4 - the Workflow.** The happy path, line for line.
 
 The claim to make out loud, because it separates Temporal from a retry library:
-this survives the process dying. Kill the Worker mid-attempt and the retry
-sequence carries on, on another Worker, with the attempt count intact. No retry
-library can do that, because its state is in memory.
+this survives the process dying. Kill the Worker after the withdrawal and
+another Worker carries on with the deposit. The withdrawal is not repeated,
+because it is already recorded in the Workflow's Event History.
 
-Do not explain `Workflow.newActivityStub` properly here. It gets its own
-walkthrough in the Workflows segment.
+Do not explain `Workflow.newActivityStub` here. It gets its own walkthrough in the
+Workflows segment.
 -->
 
 ---
 layout: default
 ---
 
-# What you get for free
+# Where did the failures go?
+
+<table class="where">
+<thead><tr><th>In production</th><th>With Temporal</th></tr></thead>
+<tbody>
+<tr><td>The bank's API is down, or hangs</td><td>Retried with backoff until it is back; <code>setStartToCloseTimeout</code> abandons a hung call</td></tr>
+<tr><td>A crash between the two lines</td><td>Another Worker resumes the Workflow at the deposit. The withdrawal is not repeated</td></tr>
+<tr><td>A power outage, or a deploy</td><td>Progress lives in the Temporal Service, not in your process</td></tr>
+<tr><td>A double-tapped Send</td><td>Use the transfer ID as the Workflow ID: the second start is rejected</td></tr>
+<tr><td>A bug in the deposit code</td><td>The deposit keeps retrying. Ship the fix, and the next attempt runs it</td></tr>
+<tr><td>Insufficient funds</td><td>Listed as non-retryable: it fails at once</td></tr>
+</tbody>
+</table>
+
+<style scoped>
+.where {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+.where td:first-child {
+  white-space: nowrap;
+  color: var(--temporal-text-strong);
+}
+</style>
+
+<!--
+Go back to the failures slide, row by row. None of the right-hand column is
+code you wrote.
+
+- **Bank down.** The Retry Policy. The bank can be down for an hour; the
+  transfer simply finishes late.
+- **Crash between the lines.** Every completed Activity is recorded in Event
+  History. A new Worker replays the Workflow, sees the withdrawal already
+  happened, and schedules only the deposit. That replay is the mechanism behind
+  the "only the happy path" promise.
+- **Power outage.** Same mechanism. Workers are stateless; kill all of them and
+  start them again.
+- **Double tap.** Two running Workflows can never share an ID. The patterns
+  section comes back to this.
+- **A bug.** Unlimited retries are a feature here: the stuck transfers wait
+  for your fix instead of landing in a dead-letter queue.
+- **Insufficient funds.** The one line of configuration from the last slide.
+
+The honest caveat: Activities run at least once, so the bank calls still need
+an idempotency key. That has its own slide later in the day.
+-->
+
+---
+layout: default
+---
+
+# Retries are configuration
+
+<table class="policy">
+<thead><tr><th>The question</th><th>Retry Policy field</th><th>Default</th></tr></thead>
+<tbody>
+<tr><td>How long before the first retry?</td><td><code>setInitialInterval</code></td><td>1 second</td></tr>
+<tr><td>How fast does the wait grow?</td><td><code>setBackoffCoefficient</code></td><td>2.0</td></tr>
+<tr><td>What is the longest wait?</td><td><code>setMaximumInterval</code></td><td>100 × the initial interval</td></tr>
+<tr><td>How many times?</td><td><code>setMaximumAttempts</code></td><td>Unlimited</td></tr>
+<tr><td>When don't we retry?</td><td><code>setDoNotRetry</code></td><td>None</td></tr>
+</tbody>
+</table>
+
+<p class="policy-note">Declared once, by the caller. No loop, no helper, no state to lose.</p>
+
+<style scoped>
+.policy {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+.policy-note {
+  margin-top: 1.25rem !important;
+}
+</style>
+
+<!--
+Source: docs.temporal.io/encyclopedia/retry-policies (default values).
+
+Every question from "And the questions start" that was about retries, mapped to
+one field. The defaults are sensible, which is why the Temporal version set
+only one of them.
+
+Point out that this is not a library default living in your process: the
+Temporal Service tracks the attempt count and the next retry time, so a retry
+schedule survives every Worker restarting.
+
+`setStartToCloseTimeout` is not on this table because it is not part of the Retry
+Policy (it is on `ActivityOptions`, beside `setRetryOptions`), but it is
+what decides that an attempt has failed by hanging.
+-->
+
+---
+layout: default
+---
+
+# Just the code you already write
+
+<div class="grid grid-cols-2 gap-10 mt-6">
+<div>
+
+- **No DSL.** No YAML, no JSON state machine, no visual designer.
+- **Plain Java.** Classes, methods, `if`, loops, `try`/`catch`.
+- **Your tools.** Your IDE, your debugger, your test runner, your CI.
+
+</div>
+<div>
+
+- **Your packages.** Activities call any Maven library, any API, any database.
+- **Your architecture.** Start one Workflow from the service you already run.
+- **One feature at a time.** No rewrite to adopt it.
+
+</div>
+</div>
+
+<!--
+The objection this answers before anyone raises it: "so I have to learn a new
+workflow language." No. A Workflow is an interface and a class, and an
+Activity is any method.
+
+The rule that comes with it, said now so it is not a surprise later: Workflow
+code must be deterministic, which is why the bank calls live in Activities.
+The design-patterns segment draws that line properly.
+
+Adoption is the point of the last row. Teams usually start with one painful
+flow (a transfer, an onboarding, a nightly batch), not a migration.
+-->
+
+---
+layout: default
+---
+
+# And out of the box
+
+<div class="features">
+<div class="feature"><strong>Durable timers</strong><span><code>Workflow.sleep(Duration.ofDays(30))</code> survives every restart</span></div>
+<div class="feature"><strong>Signals, Queries, Updates</strong><span>Talk to a Workflow while it runs</span></div>
+<div class="feature"><strong>Full visibility</strong><span>Every run, its inputs, and its history in the Web UI</span></div>
+<div class="feature"><strong>Schedules</strong><span>Start Workflows on a schedule, without a cron box</span></div>
+<div class="feature"><strong>Child Workflows and Sagas</strong><span>Compose flows, and undo them when they fail</span></div>
+<div class="feature"><strong>Versioning</strong><span>Change code while transfers are still running</span></div>
+</div>
+
+<style scoped>
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.feature {
+  border: 1px solid var(--temporal-border-hi);
+  border-left: 3px solid var(--temporal-green);
+  border-radius: 0.5rem;
+  padding: 0.8rem 1rem;
+}
+.feature strong {
+  display: block;
+  color: var(--temporal-text-strong);
+  margin-bottom: 0.3rem;
+}
+.feature span {
+  display: block;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+.feature code {
+  font-size: 0.8rem !important;
+}
+</style>
+
+<!--
+A tour of the agenda, not a feature list to explain. Each box is a section
+later today; name it and move on.
+
+- Durable timers: the Workflows segment.
+- Signals, Queries, Updates: right after the first lab.
+- Visibility: the next two slides, and every demo.
+- Schedules: More features.
+- Child Workflows and Sagas: the advanced topics.
+- Versioning: its own segment.
+-->
+
+---
+layout: default
+---
+
+# What you see in the Web UI
 
 <div class="ui-timeline">
-  <div class="row"><span class="lane">Workflow Execution</span><span class="track"><span class="bar ok" style="left: 0%; width: 100%">ticket-low-TEMP-042</span></span></div>
-  <div class="row"><span class="lane">Activity</span><span class="track"><span class="bar ok" style="left: 0%; width: 31%">sendAutoResponse</span></span></div>
-  <div class="row"><span class="lane">Activity</span><span class="track"><span class="bar ok" style="left: 32%; width: 31%">searchKnowledgeBase</span></span></div>
-  <div class="row"><span class="lane">Activity</span><span class="track"><span class="bar ok" style="left: 64%; width: 36%">notifyCustomer</span></span></div>
+  <div class="row"><span class="lane">Workflow Execution</span><span class="track"><span class="bar ok" style="left: 0%; width: 100%">transfer-4471</span></span></div>
+  <div class="row"><span class="lane">Activity</span><span class="track"><span class="bar ok" style="left: 0%; width: 48%">withdraw</span></span></div>
+  <div class="row"><span class="lane">Activity</span><span class="track"><span class="bar ok" style="left: 50%; width: 50%">deposit</span></span></div>
 </div>
 
 <style scoped>
@@ -580,27 +747,23 @@ layout: default
 </style>
 
 <!--
-Source: PPT slides 17-18. The original was a screenshot of the Web UI's
-timeline view; this is a redrawing of the same run.
+A redrawing of the Web UI's timeline view for one transfer, the happy path.
 
-The same ticket flow, run on Temporal, as the Web UI's timeline shows it.
-
-A low-priority ticket, the happy path. Every Activity is a bar with a start,
-an end and a result. You wrote none of this.
+The Workflow ID is the transfer ID, so support finds Alice's transfer by the
+number on her receipt. Every Activity is a bar with a start, an end, and a
+result. This is the audit trail the plumbing version wrote by hand.
 -->
 
 ---
 layout: default
 ---
 
-# …including when it fails
+# …including when the bank is down
 
 <div class="ui-timeline">
-  <div class="row"><span class="lane">Workflow Execution</span><span class="track"><span class="bar ok" style="left: 0%; width: 100%">ticket-low-TEMP-043</span></span></div>
-  <div class="row"><span class="lane">Activity</span><span class="track"><span class="bar ok" style="left: 0%; width: 22%">sendAutoResponse</span></span></div>
-  <div class="row"><span class="lane">Activity</span><span class="track"><span class="bar failed" style="left: 23%; width: 22%">searchKnowledgeBase ⓘ</span></span></div>
-  <div class="row"><span class="lane">Activity</span><span class="track"><span class="bar ok" style="left: 46%; width: 21%">assignAgent</span></span></div>
-  <div class="row"><span class="lane">Activity</span><span class="track"><span class="bar ok" style="left: 68%; width: 32%">resolveTicket</span></span></div>
+  <div class="row"><span class="lane">Workflow Execution</span><span class="track"><span class="bar ok" style="left: 0%; width: 100%">transfer-4472</span></span></div>
+  <div class="row"><span class="lane">Activity</span><span class="track"><span class="bar ok" style="left: 0%; width: 22%">withdraw</span></span></div>
+  <div class="row"><span class="lane">Activity</span><span class="track"><span class="bar failed" style="left: 24%; width: 16%">deposit ⓘ</span><span class="bar failed" style="left: 42%; width: 16%">attempt 2</span><span class="bar failed" style="left: 60%; width: 16%">attempt 3</span><span class="bar ok" style="left: 78%; width: 22%">attempt 4</span></span></div>
 </div>
 
 <style scoped>
@@ -619,13 +782,13 @@ layout: default
   border-bottom: none;
 }
 .lane {
-  padding: 0.6rem 0.9rem;
+  padding: 0.7rem 0.9rem;
   font-size: 0.9rem;
   border-right: 1px solid var(--temporal-border-hi);
 }
 .track {
   position: relative;
-  margin: 0.4rem 0.9rem;
+  margin: 0.45rem 0.9rem;
 }
 .bar {
   position: absolute;
@@ -651,35 +814,13 @@ layout: default
 </style>
 
 <!--
-Source: PPT slide 18. Redrawn from the original's Web UI screenshot.
+A redrawing, not a screenshot: the real timeline shows one Activity bar with
+its attempt count and last failure, one click from the stack trace. It is
+drawn as separate attempts here so the room can see the retries.
 
-The knowledge base search fails with a non-retryable error, and the Workflow
-takes the other branch: assign an agent, resolve the ticket. The failure is not a
-log line; in the Web UI it is a red bar with the error and the stack trace one
-click away.
-
-That is the visibility requirement from the "unspoken" slide, met without a
-line of code. If you have a live environment, show the Event History tab here:
-it is the audit trail the exhaustive version spent hundreds of lines building.
--->
-
----
-layout: image-right
----
-
-# Every run, on the record
-
-Each ticket is its own Workflow Execution, with an ID you choose and a status
-you can filter on.
-
-::image::
-
-<img src="/images/workflow-list.png" alt="Temporal UI Workflow list: ticket Workflows, all Completed, with IDs like ticket-high-TEMP-100" class="rounded" />
-
-<!--
-Source: PPT slide 18.
-
-Point at the Workflow IDs: `ticket-high-TEMP-100-…`. The ID is yours to design,
-and it is the first thing an on-call engineer searches for. Choosing it well
-(ticket number, order number) is how support finds the run in seconds.
+The bank is down for three attempts. Nobody was paged, nothing went to a
+dead-letter queue, and no one wrote a retry loop. The deposit succeeds on the
+fourth attempt and the withdrawal ran once. This is the answer to "who finds
+out when it never succeeds?": anyone with the Web UI open, with the error in
+front of them.
 -->

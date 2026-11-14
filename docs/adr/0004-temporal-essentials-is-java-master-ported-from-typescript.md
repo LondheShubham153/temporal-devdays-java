@@ -12,6 +12,14 @@ idiomatic Java against SDK 1.40.0 and proven the same way: runnable
 `snippets/`, tests that tie each slide's code to its snippet, runtime tests on
 `TestWorkflowEnvironment`, and a rendered walkthrough check in CI.
 
+On 2026-11-14 the Deck was brought up to `d9fbfcb` of the same source: the
+opening retold as one bank transfer, slides reordered (Design patterns after
+Activities, "Keep it in the Workflow" in Workflows, Resumable Activity after
+Updates, the idempotency slides closing the Saga section), new Worker,
+idempotency-key and compensation-Activity slides, and the Saga implementation
+taught as pseudocode before the real Java. Later syncs follow the same way:
+diff the source Deck from the last synced commit and port each change.
+
 ## Considered Options
 
 `decks/temporal-essentials/` was rejected: the Python and TypeScript repos both
