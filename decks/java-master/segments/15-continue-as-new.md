@@ -90,6 +90,43 @@ ask for `AUTO_UPGRADE`.)
 -->
 
 ---
+layout: center
+class: text-center
+---
+
+<p style="font-size: 2.6rem; font-weight: 200; line-height: 1.2">Why doesn't Temporal default to Continue&#8209;As&#8209;New?</p>
+
+<p v-click style="font-size: 2.2rem; font-weight: 300; margin-top: 2rem; color: var(--temporal-green)">Only your code knows what state to carry forward.</p>
+
+<div v-click style="font-size: 1.2rem; margin-top: 2rem; line-height: 1.8">
+
+History is the state · It needs a safe point · Most Workflows never need it
+
+</div>
+
+<!--
+Ask it, let the room answer, then click. Someone usually says "performance",
+and the second click is why that is not the reason.
+
+- **History is the state.** Temporal does not snapshot your Workflow's
+  variables; it rebuilds them by replaying the Event History. Cut the history
+  and the state goes with it, unless something carries it across. That
+  something is the input to the new run, and only your code knows what belongs
+  in it: `cyclesCompleted` yes, the loop's scratch variables no.
+- **It needs a safe point.** In-flight work does not come along: pending
+  Activities, Timers, and Signal or Update handlers still running. Your code
+  knows when it is between steps (after a charge, before the next sleep); the
+  Server does not.
+- **Most Workflows never need it.** An order, a transfer, a Saga finishes in
+  hundreds of Events, far below the limits. One unbroken history is also the
+  better audit trail and debugging record, and a new run means a new Run ID
+  that anyone holding the old one has to follow.
+
+So Temporal does the part it can see, and tells you when it is time:
+`isContinueAsNewSuggested`, on the next slide but one.
+-->
+
+---
 layout: code-walkthrough
 heading: "Continue-As-New in practice: a monthly subscription"
 notes:
