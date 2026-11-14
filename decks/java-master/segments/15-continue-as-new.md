@@ -100,7 +100,7 @@ class: text-center
 
 <div v-click style="font-size: 1.2rem; margin-top: 2rem; line-height: 1.8">
 
-History is the state · It needs a safe point · Most Workflows never need it
+History is the state · It needs cleanup first · Most Workflows never need it
 
 </div>
 
@@ -113,10 +113,20 @@ and the second click is why that is not the reason.
   and the state goes with it, unless something carries it across. That
   something is the input to the new run, and only your code knows what belongs
   in it: `cyclesCompleted` yes, the loop's scratch variables no.
-- **It needs a safe point.** In-flight work does not come along: pending
-  Activities, Timers, and Signal or Update handlers still running. Your code
-  knows when it is between steps (after a charge, before the next sleep); the
-  Server does not.
+- **It needs cleanup first.** In-flight work does not come along, so the
+  current run has to wind down before it hands over, and only your code knows
+  what that takes:
+  - let running Signal and Update handlers finish:
+    `Workflow.await(() -> Workflow.isEveryHandlerFinished())`;
+  - drain Signals buffered in a field (a queue of pending changes) by
+    processing them or passing them in the new run's input, or they are lost;
+  - wait for or cancel pending Activities, and decide what happens to running
+    Child Workflows (their Parent Close Policy);
+  - release anything held outside Temporal, such as a lease or a reservation,
+    through an Activity.
+
+  Then continue at a point between steps (after a charge, before the next
+  sleep). The Server cannot tell when the run is in that state.
 - **Most Workflows never need it.** An order, a transfer, a Saga finishes in
   hundreds of Events, far below the limits. One unbroken history is also the
   better audit trail and debugging record, and a new run means a new Run ID
