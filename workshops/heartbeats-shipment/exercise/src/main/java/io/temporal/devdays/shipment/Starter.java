@@ -51,10 +51,17 @@ public class Starter {
         }
 
         System.out.println();
+        // Everything below comes from the Activity's result, which Temporal recorded
+        // in the Event History: the ActivityTaskCompleted event of shipment-demo.
         System.out.println("Packed " + result.packed() + " items, finished on attempt "
                 + result.finishedOnAttempt() + ".");
-        if (result.finishedOnAttempt() > 1) {
-            System.out.println("An earlier attempt was interrupted. This one finished the job.");
+        if (result.finishedOnAttempt() > 1 && result.resumedFrom() > 0) {
+            System.out.println("An earlier attempt was interrupted. Attempt " + result.finishedOnAttempt()
+                    + " resumed at item " + (result.resumedFrom() + 1) + ": the last recorded Heartbeat said "
+                    + result.resumedFrom() + " packed.");
+        } else if (result.finishedOnAttempt() > 1) {
+            System.out.println("An earlier attempt was interrupted. No Heartbeat was recorded, so attempt "
+                    + result.finishedOnAttempt() + " started again at item 1.");
         }
         System.exit(0);
     }

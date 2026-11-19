@@ -126,11 +126,12 @@ attempt 1's 20 seconds have run out, it packs nothing until they do. Either
 way it prints:
 
 ```bash,nocopy
-17:16:19 INFO ShipmentActivitiesImpl - packing shipment-demo, attempt 2, starting at item 0
+17:16:19 INFO ShipmentActivitiesImpl - packing shipment-demo, attempt 2: no Heartbeat recorded, starting at item 1 of 40
 ```
 
-**Slow, and from item 0.** The items the crashed Worker had already packed get
-packed a second time.
+**Slow, and from item 1.** Temporal recorded nothing about attempt 1's
+progress, so the items the crashed Worker had already packed get packed a
+second time.
 
 # Step 1 of 3: notice a silent attempt (TODO 1a)
 
@@ -184,7 +185,7 @@ fail after 2 seconds, even a healthy one. Step 2 sends them.
 **Observe.** Open `ShipmentActivitiesImpl.java`, the Activity that packs.
 
 <!-- snippet: exercise/src/main/java/io/temporal/devdays/shipment/ShipmentActivitiesImpl.java TODO 1b before=6 -->
-Lines 24-31 are the packing loop:
+Lines 33-40 are the packing loop:
 
 ```java
         try {
@@ -210,7 +211,7 @@ the detail a retry needs.
 <summary>Show solution</summary>
 
 <!-- snippet: solution/src/main/java/io/temporal/devdays/shipment/ShipmentActivitiesImpl.java TODO 1b -->
-Lines 30-32 of `solution/.../ShipmentActivitiesImpl.java`:
+Lines 39-41 of `solution/.../ShipmentActivitiesImpl.java`:
 
 ```java
                 // TODO 1b start: Heartbeat the number of items packed so far
@@ -291,36 +292,52 @@ run-starter
 ```
 
 Watch the [button label="Worker" background="#444CE7"](tab-1) tab and press
-**Ctrl+C** around item 10.
+**Ctrl+C** around item 10. Note the last `packed item N of 40` it printed.
 
-Pending Activities in the [button label="Temporal UI" background="#444CE7"](tab-3)
-tab now shows a last Heartbeat and its details, the count. Start a replacement
-right away:
+**Don't restart the Worker yet.** First read what Temporal recorded. Open
+`shipment-demo` in the [button label="Temporal UI" background="#444CE7"](tab-3)
+tab and look at **Pending Activities**: attempt 2, **Scheduled**, last failure
+`activity Heartbeat timeout`, and **Heartbeat Details**, a number. That number
+is the checkpoint: the last packed count the Server received. It is usually a
+few below what the Worker printed. Killed at item 10, it is typically 6.
+
+The Worker's log is its own progress, printed before any Heartbeat leaves the
+process. The SDK **throttles** Heartbeats: with a 2-second Heartbeat Timeout it
+sends at most one every 1.6 seconds (0.8 of the timeout), about one every five
+items here, and keeps only the newest count in between. A crash sends nothing
+more. So Heartbeat after every item, and expect the checkpoint to lag behind
+the log.
+
+Now start the replacement:
 
 ```bash,run
 run-worker
 ```
 
-As soon as it is up, a few seconds after the crash:
+As soon as it is up, it resumes from that checkpoint, the number in the UI:
 
 ```bash,nocopy
-17:17:21 INFO ShipmentActivitiesImpl - packing shipment-demo, attempt 2, starting at item 6
+17:17:21 INFO ShipmentActivitiesImpl - packing shipment-demo, attempt 2: last recorded Heartbeat says 6 packed, resuming at item 7 of 40
 ```
 
 And the Client tab finishes with:
 
 ```bash,nocopy
 Packed 40 items, finished on attempt 2.
-An earlier attempt was interrupted. This one finished the job.
+An earlier attempt was interrupted. Attempt 2 resumed at item 7: the last recorded Heartbeat said 6 packed.
 ```
 
-**Fast, and from where it left off.** Your number depends on when you killed it.
+Your numbers depend on when you killed it. What has to match is the
+**Heartbeat Details** in the UI and the `says N packed` in the log.
 
-It resumes a few items behind the last one the dead Worker printed. The SDK
-**throttles** Heartbeats: with a 2-second timeout it sends at most one every
-1.6 seconds and keeps only the newest in between. A crash sends nothing more,
-so whatever was packed after the last Heartbeat left the process is packed
-again. Heartbeat as often as you like; the SDK decides what goes over the wire.
+Check the Event History of `shipment-demo` too. **ActivityTaskStarted** is
+attempt 2, with `activity Heartbeat timeout` as its last failure. The
+**ActivityTaskCompleted** result is what the Client printed, recorded by
+Temporal: `"finishedOnAttempt": 2` and `"resumedFrom": 6`.
+
+**Fast, and from the last checkpoint.** Items between the checkpoint and the
+crash (7 to 10 here) were packed twice. Heartbeats shrink the repeated work;
+they do not remove it, so each item's work must be safe to repeat.
 
 # Checkpoint
 
@@ -337,7 +354,7 @@ run-starter
 While it packs, open `shipment-demo` in the
 [button label="Temporal UI" background="#444CE7"](tab-3) tab and choose
 **Request Cancellation** from the Workflow's actions, top right. The Worker
-prints `interrupted at item N`: the next `heartbeat()` call throws an
+prints `interrupted after N items packed`: the next `heartbeat()` call throws an
 `ActivityCompletionException`. The Client tab says the shipment ended Canceled.
 An Activity that never Heartbeats never learns it was cancelled, and keeps
 working.

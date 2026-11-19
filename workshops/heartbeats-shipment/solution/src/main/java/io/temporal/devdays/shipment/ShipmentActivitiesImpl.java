@@ -19,7 +19,16 @@ public class ShipmentActivitiesImpl implements ShipmentActivities {
         int packed = context.getHeartbeatDetails(Integer.class).orElse(0);
         // TODO 1c end
 
-        log.info("packing {}, attempt {}, starting at item {}", input.shipmentId(), attempt, packed);
+        // packed is a count of items already done, so the next item is packed + 1,
+        // numbered the way the "packed item N of 40" lines below number them.
+        int resumedFrom = packed;
+        if (resumedFrom == 0) {
+            log.info("packing {}, attempt {}: no Heartbeat recorded, starting at item 1 of {}",
+                    input.shipmentId(), attempt, input.itemCount());
+        } else {
+            log.info("packing {}, attempt {}: last recorded Heartbeat says {} packed, resuming at item {} of {}",
+                    input.shipmentId(), attempt, resumedFrom, resumedFrom + 1, input.itemCount());
+        }
 
         try {
             for (int item = packed; item < input.itemCount(); item++) {
@@ -34,11 +43,11 @@ public class ShipmentActivitiesImpl implements ShipmentActivities {
         } catch (ActivityCompletionException e) {
             // Cancellation reaches a running Activity through its Heartbeat: the
             // next heartbeat() call throws. Let it out.
-            log.info("interrupted at item {}", packed);
+            log.info("interrupted after {} items packed", packed);
             throw e;
         }
 
-        return new ShipmentResult(input.shipmentId(), packed, attempt);
+        return new ShipmentResult(input.shipmentId(), packed, attempt, resumedFrom);
     }
 
     private static void packOneItem() {
