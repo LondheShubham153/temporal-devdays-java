@@ -13,8 +13,13 @@ crashes its Worker with Ctrl+C partway through, twice:
   killed at item 10, attempt 2 started 19 s later) and starts again at item 0.
 - **With Heartbeats:** the retry starts as soon as a replacement Worker is up,
   about 2 s after the kill (the Heartbeat Timeout), and resumes from the last
-  Heartbeat (measured: killed at item 10, resumed at item 6, the gap being
-  Heartbeat throttling).
+  Heartbeat the Server recorded (measured three times: killed after item 10,
+  Pending Activities showed Heartbeat details `6`, and attempt 2 resumed at item
+  7). The gap is the SDK's Heartbeat throttling (at most one every 0.8 of the
+  timeout, so about every five items), not lost progress. The learner reads the
+  checkpoint in the UI before restarting the Worker; the Worker log and the
+  Client both name the same number, and the Activity result in the Event
+  History records it as `resumedFrom`.
 
 | # | Challenge | Change | Check passes when |
 |---|---|---|---|

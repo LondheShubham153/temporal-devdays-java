@@ -106,7 +106,7 @@ class ShipmentHeartbeatTest {
                 context.doNotCompleteOnReturn();
                 return null;
             }
-            return new ShipmentResult(input.shipmentId(), input.itemCount(), attempt);
+            return new ShipmentResult(input.shipmentId(), input.itemCount(), attempt, 0);
         }
     }
 
@@ -171,6 +171,9 @@ class ShipmentHeartbeatTest {
         assertEquals(18, run.result().packed(),
                 "Expected all 18 items packed and got " + run.result().packed()
                         + ". Check TODO 1c in ShipmentActivitiesImpl.java, packShipment.");
+        assertEquals(16, run.result().resumedFrom(),
+                "packShipment's result must report the Heartbeat count it resumed from (16) as resumedFrom."
+                        + " Check TODO 1c in ShipmentActivitiesImpl.java, packShipment.");
     }
 
     @Test
