@@ -117,8 +117,8 @@ closes, and only the child's lane changes.
   one people misunderstand: the child keeps running even though the parent is
   gone. That is intentional, and powerful for fire-and-forget sub-processes.
 - **Click 3 - `REQUEST_CANCEL`.** The child is sent a cancellation request and
-  can clean up gracefully, the same cancellation the Saga section uses to run
-  compensations, before it ends as cancelled.
+  can clean up gracefully before it ends as cancelled: the cancellation the
+  Saga section pointed to, where compensations still run in a detached scope.
 
 The policy applies whenever the parent closes, whether it completed, failed,
 timed out or was terminated. Not only on failure. In code these are

@@ -63,6 +63,31 @@ waits for the last run.
 
 ---
 layout: default
+clicks: 2
+---
+
+# One Workflow, many runs
+
+<ContinueAsNewRuns />
+
+<!--
+The previous slide as a picture: the subscription from the walkthrough coming
+up, a few years in.
+
+- **Start.** Run 1 bills month after month. Its Event History fills until
+  `isContinueAsNewSuggested()` turns true.
+- **Click 1.** It calls `continueAsNew` with only `cyclesCompleted`. Run 2
+  starts under the same Workflow ID with a new Run ID and an empty history,
+  and picks up at cycle 42.
+- **Click 2.** Same again. Run 3 is the one running now; runs 1 and 2 are
+  closed as Continued-As-New, and their histories are still there in the UI.
+
+Point at the dashed box: callers only ever use `subscription-42`. A Signal or
+`getResult` by Workflow ID reaches whichever run is current.
+-->
+
+---
+layout: default
 ---
 
 # When to use it
@@ -87,6 +112,53 @@ cause non-determinism errors in long-running Workflows. A new run starts with
 empty history, so there is nothing old to replay against the new code. (With
 Worker Versioning, a Pinned run's continuation inherits its version unless you
 ask for `AUTO_UPGRADE`.)
+-->
+
+---
+layout: center
+class: text-center
+---
+
+<p style="font-size: 2.6rem; font-weight: 200; line-height: 1.2">Why doesn't Temporal default to Continue&#8209;As&#8209;New?</p>
+
+<p v-click style="font-size: 2.2rem; font-weight: 300; margin-top: 2rem; color: var(--temporal-green)">Only your code knows what state to carry forward.</p>
+
+<div v-click style="font-size: 1.2rem; margin-top: 2rem; line-height: 1.8">
+
+History is the state · It needs cleanup first · Most Workflows never need it
+
+</div>
+
+<!--
+Ask it, let the room answer, then click. Someone usually says "performance",
+and the second click is why that is not the reason.
+
+- **History is the state.** Temporal does not snapshot your Workflow's
+  variables; it rebuilds them by replaying the Event History. Cut the history
+  and the state goes with it, unless something carries it across. That
+  something is the input to the new run, and only your code knows what belongs
+  in it: `cyclesCompleted` yes, the loop's scratch variables no.
+- **It needs cleanup first.** In-flight work does not come along, so the
+  current run has to wind down before it hands over, and only your code knows
+  what that takes:
+  - let running Signal and Update handlers finish:
+    `Workflow.await(() -> Workflow.isEveryHandlerFinished())`;
+  - drain Signals buffered in a field (a queue of pending changes) by
+    processing them or passing them in the new run's input, or they are lost;
+  - wait for or cancel pending Activities, and decide what happens to running
+    Child Workflows (their Parent Close Policy);
+  - release anything held outside Temporal, such as a lease or a reservation,
+    through an Activity.
+
+  Then continue at a point between steps (after a charge, before the next
+  sleep). The Server cannot tell when the run is in that state.
+- **Most Workflows never need it.** An order, a transfer, a Saga finishes in
+  hundreds of Events, far below the limits. One unbroken history is also the
+  better audit trail and debugging record, and a new run means a new Run ID
+  that anyone holding the old one has to follow.
+
+So Temporal does the part it can see, and tells you when it is time:
+`isContinueAsNewSuggested`, on the next slide but one.
 -->
 
 ---

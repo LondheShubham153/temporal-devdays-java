@@ -77,6 +77,13 @@ Core TODOs are required to finish; Stretch TODOs are optional extras for learner
 who finish early, and nothing later depends on them.
 _Avoid_: starter, skeleton, template
 
+**Stretch Workshop**:
+A Workshop whose Track is offered, in every Dev Day, only to learners who
+finish early. Everyone still sees its Deck segment; nothing later in a Dev Day
+depends on its Track. It describes live delivery only: on its own, the
+Workshop and its Track are like any other.
+_Avoid_: bonus lab, optional workshop, extra
+
 **Solution**:
 The completed counterpart of an Exercise, structurally identical to it.
 _Avoid_: answer, final, complete
