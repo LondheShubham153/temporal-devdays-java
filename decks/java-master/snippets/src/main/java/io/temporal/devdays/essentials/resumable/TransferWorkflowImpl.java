@@ -29,7 +29,9 @@ public class TransferWorkflowImpl implements TransferWorkflow {
     while (true) {
       status = "TRANSFERRING";
       try {
-        return activities.executeTransfer(transfer.withToAccount(account));
+        String receipt = activities.executeTransfer(transfer.withToAccount(account));
+        status = "COMPLETED";
+        return receipt;
       } catch (ActivityFailure e) {
         // Let cancellation through: only a failed transfer parks.
         if (e.getCause() instanceof CanceledFailure) {

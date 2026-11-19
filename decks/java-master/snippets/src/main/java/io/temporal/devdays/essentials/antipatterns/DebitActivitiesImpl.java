@@ -10,7 +10,7 @@ public class DebitActivitiesImpl implements DebitActivities {
     this.ledger = ledger;
   }
 
-  // slide: 17b-patterns-and-anti-patterns.md "An idempotency key that survives retries"
+  // slide: 17-saga-07-related.md "An idempotency key that survives retries"
   @Override
   public String postDebit(Debit debit) {
     ActivityInfo info = Activity.getExecutionContext().getInfo();

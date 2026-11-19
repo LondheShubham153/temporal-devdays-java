@@ -16,7 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * 17b-patterns-and-anti-patterns.md: "Resumable Activity: you're on call", the console in
+ * 11-updates.md: "Resumable Activity: you're on call", the console in
  * components/ResumableTransfer.vue, and the demo after it.
  */
 class ResumableTest {
@@ -91,6 +91,11 @@ class ResumableTest {
         stub.getResult(String.class),
         "TransferWorkflowImpl.transfer should resume with the corrected account");
     assertEquals(List.of("99999999", "12345678"), activities.attempts);
+    // A Query on the finished Workflow reports where it ended, as the console shows.
+    assertEquals(
+        "COMPLETED",
+        transfer.getStatus(),
+        "TransferWorkflowImpl.transfer should set the status to COMPLETED before it returns");
 
     // Same Workflow Execution throughout: no restart, no new run.
     WorkflowExecutionDescription description = stub.describe();

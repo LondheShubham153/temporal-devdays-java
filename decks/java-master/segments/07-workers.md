@@ -19,6 +19,40 @@ somebody always asks.
 -->
 
 ---
+layout: default
+---
+
+# What is a Worker?
+
+The part of your application that runs your Workflow and Activity code.
+
+- **The Temporal Service is the manager.** It keeps state, schedules work and
+  records what happened
+- **The Worker does the work.** It polls a Task Queue ("any work for me?"), runs
+  your code, and reports the result back
+- **It runs on your infrastructure**: servers, containers, serverless. The
+  Service never runs your code or calls your databases and APIs
+- **It scales horizontally**: one on your laptop, hundreds in production
+
+<!--
+Sources: docs.temporal.io/evaluate/understanding-temporal#workers and
+docs.temporal.io/encyclopedia/architecture/how-temporal-works#worker.
+
+The misconception to kill: "Temporal runs my code." It does not. The Service
+stores Event History and hands out Tasks; the code only ever runs inside a
+Worker that you deploy, so your databases and APIs are only ever called from
+inside your own network. That is the answer to the security question somebody
+always asks. Be precise if it comes up: Workflow and Activity inputs and results
+do travel to the Service, because they are stored in Event History. Encrypting
+them with a Payload Codec has its own segment later.
+
+Polling is the other word to land. Workers pull work; the Service never pushes
+to them. So a Worker needs only outbound access to the Service, no open
+inbound port, and adding capacity means starting another Worker on the same
+Task Queue. Nothing to register, no load balancer to reconfigure.
+-->
+
+---
 layout: code-walkthrough
 heading: Java Workers
 notes:

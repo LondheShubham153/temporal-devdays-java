@@ -8,7 +8,7 @@ import java.time.Duration;
 public class ClaimWorkflowImpl implements ClaimWorkflow {
   @Override
   public Approval process(Claim claim) {
-    // slide: 04-design-patterns.md "Keep it in the Workflow if it… must survive restarts"
+    // slide: 05-workflows.md "Keep it in the Workflow if it… must survive restarts"
     ActivityOptions options =
         ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofSeconds(30)).build();
     ClaimActivities activities = Workflow.newActivityStub(ClaimActivities.class, options);

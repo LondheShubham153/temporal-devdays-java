@@ -9,7 +9,7 @@ public class FollowUpWorkflowImpl implements FollowUpWorkflow {
 
   @Override
   public String followUp() {
-    // slide: 04-design-patterns.md "Keep it in the Workflow if it… manages timing"
+    // slide: 05-workflows.md "Keep it in the Workflow if it… manages timing"
     // Sleep for 30 days — durable, costs nothing while waiting
     Workflow.sleep(Duration.ofDays(30));
 

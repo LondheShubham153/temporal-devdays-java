@@ -32,7 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-/** 04-design-patterns: each slide's code runs, and the claims its notes make about it hold. */
+/** 04-design-patterns and the Workflow half in 05-workflows: each slide's code runs, and the claims its notes make about it hold. */
 @Timeout(30)
 class DesignPatternsTest {
   private static final String QUEUE = "patterns";
@@ -175,7 +175,7 @@ class DesignPatternsTest {
     assertTrue(
         history(id).stream()
             .noneMatch(e -> e.getEventType() == EventType.EVENT_TYPE_ACTIVITY_TASK_SCHEDULED),
-        "04-design-patterns.md (makes business decisions): the decision costs no Activity call");
+        "05-workflows.md (makes business decisions): the decision costs no Activity call");
     assertEquals(
         ApprovalStatus.APPROVED,
         stub(TriageWorkflow.class).triage(new Claim("c-3", 500, ClaimType.CHECKUP, List.of())),
@@ -213,7 +213,7 @@ class DesignPatternsTest {
     assertEquals(
         Duration.ofDays(30).toSeconds(),
         timer.getTimerStartedEventAttributes().getStartToFireTimeout().getSeconds(),
-        "04-design-patterns.md (manages timing): Workflow.sleep(30 days) is a Timer in history");
+        "05-workflows.md (manages timing): Workflow.sleep(30 days) is a Timer in history");
   }
 
   @Test
@@ -239,7 +239,7 @@ class DesignPatternsTest {
     assertTrue(
         history(id).stream()
             .anyMatch(e -> e.getEventType() == EventType.EVENT_TYPE_ACTIVITY_TASK_COMPLETED),
-        "04-design-patterns.md (must survive restarts): the Activity result is in Event History");
+        "05-workflows.md (must survive restarts): the Activity result is in Event History");
   }
 
   @Test

@@ -5,7 +5,7 @@ import io.temporal.workflow.WorkflowMethod;
 
 /** The Workflow interface behind "The Temporal version" in 01-why-temporal.md. */
 @WorkflowInterface
-public interface FulfillmentWorkflow {
+public interface TransferWorkflow {
   @WorkflowMethod
-  String fulfill(String orderId);
+  void transfer(Transfer t);
 }

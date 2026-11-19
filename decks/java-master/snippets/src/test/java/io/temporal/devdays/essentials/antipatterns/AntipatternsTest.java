@@ -17,7 +17,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** 17b-patterns-and-anti-patterns.md: the four ❌/✅ slides, each half run and checked. */
+/**
+ * 17b-patterns-and-anti-patterns.md: the three ❌/✅ slides, each half run and checked; and the
+ * idempotency key slide in 17-saga-07-related.md.
+ */
 class AntipatternsTest {
   private TestWorkflowEnvironment env;
   private WorkflowClient client;

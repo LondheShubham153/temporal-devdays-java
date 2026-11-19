@@ -27,10 +27,12 @@ says what each step is, and the colours are the four kinds of thing in play.
    `ActivityTaskCompleted`. On failure, it records the failure or schedules a
    retry.
 8. **Task.** The Service puts a new Workflow Task on the Task Queue.
-9. **Worker action.** A Worker picks up that Workflow Task and replays the
-   history (or, if it still has this Workflow in its cache, applies just the
-   new Events); `activities.chargeCard(...)` now returns the recorded result,
-   and the next line of your code runs.
+9. **Worker action.** A Worker picks up that Workflow Task;
+   `activities.chargeCard(...)` returns the recorded result, and the next line
+   of your code runs. Usually the Worker still has this Workflow in its cache
+   and just hands it the result. If it does not (it crashed, restarted, or this
+   is a different Worker), it first replays the Workflow from the top against
+   the Event History to get back to this line. That replay is the next slides.
 
 Two details worth knowing. The Service writes `ActivityTaskStarted` only after
 the attempt finishes, not at pickup, so a retrying Activity does not flood the
