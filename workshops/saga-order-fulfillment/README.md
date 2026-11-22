@@ -13,7 +13,7 @@ make its undos safe, in four Challenges of one change each:
 |---|---|---|---|
 | 1 | Watch it fail | none | a Failed `OrderFulfillmentWorkflow` exists |
 | 2 | Unwind | TODO 1, `OrderFulfillmentWorkflowImpl.java` | undos run newest first; one failing undo does not stop the rest |
-| 3 | Register before you run | TODO 2a/2b, `OrderFulfillmentWorkflowImpl.java` | a step that lands and then fails is still undone |
+| 3 | Register before you run | TODO 2a/2b, `OrderFulfillmentWorkflowImpl.java` | a step that lands and then fails is still undone; an undo that fails twice is retried until it succeeds |
 | 4 | Make the undo safe to repeat | TODO 3a/3b, `OrderActivitiesImpl.java` | each undo is a no-op with nothing to undo, and acts once when run twice |
 
 ## How the `Saga` class maps to the TODOs
@@ -21,7 +21,7 @@ make its undos safe, in four Challenges of one change each:
 | TODO | `Saga` API | Lesson |
 |---|---|---|
 | 1 | `new Saga(new Saga.Options.Builder().setContinueWithError(true).build())`, `saga.compensate()` | Sequential (the default) runs undos newest first. The default also stops at the first failing undo; `continueWithError` keeps going, silently. |
-| 2a/2b | `saga.addCompensation(activities::undo, order)` above each forward call | The Saga can only run undos it was given. A step that lands and then throws never reaches a line below it. |
+| 2a/2b | `saga.addCompensation(undos::undo, order)` above each forward call | The Saga can only run undos it was given. A step that lands and then throws never reaches a line below it. The undo retries with the options of the stub it names: `activities` gives up after 2 attempts so the order can unwind; `undos` (`UNDO_OPTIONS`, given) retries with backoff, no attempt limit, for up to 5 minutes, because an undo that gives up strands the stock or the money. |
 | 3a/3b | none: plain guard clauses in the undo Activities | The Saga cannot know what an undo did. Registering first means undos run with nothing to undo, so each must be idempotent. |
 
 ## Layout
@@ -133,11 +133,16 @@ instruqt track test            # simulates a learner via the solve scripts
   `unwind(saga)` in `Workflow.newDetachedCancellationScope(...)`, and the
   `challenge2` test `cancelledOrderStillUnwinds` proves it. Worth one sentence
   in the debrief.
-- Every Activity, undos included, gets two attempts, so failures show in about a
-  second. Production undos want a patient retry policy: with
-  `continueWithError`, an undo that runs out of attempts is skipped silently and
-  its step stays standing. The Client's `undos failed` line and the Activity
-  Task Failed event are the only trace.
+- Forward steps get two attempts; undos get `UNDO_OPTIONS` (learners switch to
+  the `undos` stub in TODO 2a/2b, and the `challenge3` test
+  `undoRetriesUntilItSucceeds` fails a refund twice and requires it to go
+  through). `UNDO_OPTIONS` caps an undo at 5 minutes (Schedule-To-Close) so a
+  lab never hangs. The Temporal Essentials Deck's best practices say to leave
+  that deadline off production compensations and let them retry until they
+  succeed, alerting a human on long failures; say so in the debrief. With
+  `continueWithError`, an undo that does give up is skipped silently: the
+  Client's `undos failed` line and the Activity Task Failed event are the only
+  trace.
 - Each Challenge from 2 on starts by stopping the previous Challenge's Worker
   (its `setup-workshop`): fresh terminal tabs do not stop the old `run-worker`,
   and a second Worker on the Task Queue takes half the tasks and prints where

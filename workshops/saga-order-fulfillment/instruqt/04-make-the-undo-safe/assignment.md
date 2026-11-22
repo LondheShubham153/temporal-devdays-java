@@ -92,8 +92,8 @@ what it did. Only the undo knows that, and the
 
 Nothing was reserved, and stock was released anyway.
 
-There is a second reason for the fix. A compensation is an ordinary Activity
-with an ordinary retry policy, so Temporal can run it again after its effect
+There is a second reason for the fix. Since the last Challenge each undo
+retries until it succeeds, so Temporal can run it again after its effect
 landed: if the Worker dies, or the attempt times out, before Temporal records
 the completion, the retry runs it a second time. Releasing twice is the same
 bug.
@@ -239,6 +239,9 @@ acts once when run twice. If it fails, the message names TODO 3a or 3b.
   keeps one failing undo from stranding the rest.
 - Register the undo **before** the step, because a step can land its effect and
   still report failure.
+- Give the undos their own retry policy: a forward step gives up fast so the
+  order can unwind; an undo keeps retrying, because one that gives up strands
+  the stock or the money.
 - So every undo must cope with nothing to undo, and with running twice.
 
 ---

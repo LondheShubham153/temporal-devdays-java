@@ -72,7 +72,7 @@ must not also leave the stock locked.
 (`Cmd+P` on a Mac), type the file name, then `Ctrl+G` to jump to a line.
 
 <!-- snippet: exercise/src/main/java/io/temporal/devdays/saga/OrderFulfillmentWorkflowImpl.java TODO 1 -->
-Lines 64-72 are the two helpers `fulfill` uses to build the Saga and to unwind
+Lines 78-86 are the two helpers `fulfill` uses to build the Saga and to unwind
 it:
 
 ```java
@@ -123,7 +123,7 @@ named after the pattern's word for an undo.
 <summary>Show solution</summary>
 
 <!-- snippet: solution/src/main/java/io/temporal/devdays/saga/OrderFulfillmentWorkflowImpl.java TODO 1 -->
-Lines 64-74 of `solution/.../OrderFulfillmentWorkflowImpl.java`:
+Lines 78-88 of `solution/.../OrderFulfillmentWorkflowImpl.java`:
 
 ```java
     // TODO 1 start: run the undos newest first, and keep going when one fails
@@ -205,10 +205,10 @@ the Client listed them. These events are the proof the unwind ran:
 One thing `continueWithError` does not do is tell you. A failing undo is
 skipped silently, and `compensate()` returns normally. Its **Activity Task
 Failed** event in the Event History is the record a human has to act on; the
-Client would print it as an `undos failed:` line. And an undo gives up only when
-its retry policy runs out. This lab gives every Activity two attempts so
-failures show quickly; in production, give the undos a patient retry policy,
-because an undo that gives up leaves its step standing.
+Client would print it as an `undos failed:` line. And an undo gives up when its
+retry policy runs out. Right now the undos run on the same stub as the forward
+steps, with two attempts. In the next Challenge you give them a policy of their
+own that keeps retrying.
 
 # Checkpoint
 

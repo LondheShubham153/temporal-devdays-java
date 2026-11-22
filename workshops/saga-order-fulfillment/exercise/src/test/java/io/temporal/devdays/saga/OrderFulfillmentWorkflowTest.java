@@ -15,6 +15,7 @@ import io.temporal.worker.WorkflowImplementationOptions;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -306,10 +307,58 @@ class OrderFulfillmentWorkflowTest {
                         + WORKFLOW + " (fulfill): register the release with saga.addCompensation BEFORE reserveInventory runs.");
     }
 
-    // --- Challenge 4: TODO 3a and 3b, safe to repeat --------------------------------
+    /**
+     * The courier API and the refund API are both down for a moment: every
+     * dispatch attempt fails, and the refund fails twice before it goes through.
+     * Both failures are retryable.
+     */
+    static class RefundApiFlaky extends OrderActivitiesImpl {
+        final AtomicInteger dispatchAttempts = new AtomicInteger();
+        final AtomicInteger refundAttempts = new AtomicInteger();
+
+        @Override
+        public String dispatchCourier(io.temporal.devdays.saga.Order order) {
+            dispatchAttempts.incrementAndGet();
+            throw ApplicationFailure.newFailure("courier API down", "CourierApiDown");
+        }
+
+        @Override
+        public void refundPaymentIfCharged(io.temporal.devdays.saga.Order order) {
+            if (refundAttempts.incrementAndGet() <= 2) {
+                throw ApplicationFailure.newFailure("refund API down", "RefundApiDown");
+            }
+            super.refundPaymentIfCharged(order);
+        }
+    }
 
     @Test
     @Order(10)
+    @Tag("challenge3")
+    void undoRetriesUntilItSucceeds() {
+        var order = newOrder();
+        var activities = new RefundApiFlaky();
+        Outcome out = fulfil(order, activities);
+        assertTrue(out.failed(),
+                "The courier failed but the Workflow completed. Keep the `throw e;` at the end of the catch block in "
+                        + WORKFLOW + " (fulfill).");
+        assertEquals(2, activities.dispatchAttempts.get(),
+                "The courier step ran " + activities.dispatchAttempts.get() + " times; a forward step should give up"
+                        + " after 2 attempts so the order can unwind. Compare the `activities` stub in " + WORKFLOW
+                        + " with the one in solution/.");
+        assertTrue(out.entries().contains("refund:" + order.orderId()),
+                "The refund failed twice and was never retried to success: it ran " + activities.refundAttempts.get()
+                        + " times, and the ledger shows " + out.entries() + ". TODO 2b in " + WORKFLOW
+                        + " (fulfill): register the refund on the undos stub, saga.addCompensation(undos::refundPaymentIfCharged, order),"
+                        + " so it retries with UNDO_OPTIONS instead of giving up after 2 attempts.");
+        assertEquals(expected(order, "reserve", "charge", "refund", "release"), out.entries(),
+                "Expected reserve, charge, refund, release, and the ledger shows " + out.entries()
+                        + ". TODO 2a in " + WORKFLOW + " (fulfill): register the release on the undos stub too.");
+    }
+
+    // --- Challenge 4: TODO 3a and 3b, safe to repeat --------------------------------
+
+    @Test
+    @Order(11)
     @Tag("challenge4")
     void releaseWithNothingReservedDoesNothing() {
         var order = newOrder();
@@ -320,7 +369,7 @@ class OrderFulfillmentWorkflowTest {
     }
 
     @Test
-    @Order(11)
+    @Order(12)
     @Tag("challenge4")
     void releaseTwiceReleasesOnce() {
         var order = newOrder();
@@ -334,7 +383,7 @@ class OrderFulfillmentWorkflowTest {
     }
 
     @Test
-    @Order(12)
+    @Order(13)
     @Tag("challenge4")
     void refundWithNothingChargedDoesNothing() {
         var order = newOrder();
@@ -345,7 +394,7 @@ class OrderFulfillmentWorkflowTest {
     }
 
     @Test
-    @Order(13)
+    @Order(14)
     @Tag("challenge4")
     void refundTwiceRefundsOnce() {
         var order = newOrder();
@@ -359,7 +408,7 @@ class OrderFulfillmentWorkflowTest {
     }
 
     @Test
-    @Order(14)
+    @Order(15)
     @Tag("challenge4")
     void failedReservationReleasesNothing() {
         var order = newOrder().withFailReserve();
