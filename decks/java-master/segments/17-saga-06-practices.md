@@ -23,11 +23,13 @@ practices, in its order.
 Say which ones the lab code shows and which it deliberately does not:
 - Shown: idempotent compensations (the `IfReserved` / `IfCharged` guards),
   register before execution, `setStartToCloseTimeout` on every
-  Activity, compensations included.
-- Not shown: idempotency keys (`chargePayment` fails non-retryable instead), and
-  retrying compensations until they succeed. The lab caps every Activity at two
-  attempts so failures show up in seconds. Say this out loud: it is the line
-  most likely to be copied into production by mistake.
+  Activity, compensations included, and compensations on their own stub with
+  no attempt limit and backoff, while forward steps give up after two attempts.
+- Not shown: idempotency keys (`chargePayment` fails non-retryable instead).
+- Differs: the lab's undo options keep a 5 minute `setScheduleToCloseTimeout`,
+  so a broken lab still finishes. Say this out loud: in production, leave it
+  off, let compensations retry until they succeed, and alert a human on long
+  failures. It is the line most likely to be copied into production by mistake.
 -->
 
 ---

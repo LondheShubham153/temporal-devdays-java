@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.temporal.client.WorkflowFailedException;
 import io.temporal.client.WorkflowOptions;
+import io.temporal.client.WorkflowStub;
 import io.temporal.failure.ApplicationFailure;
 import io.temporal.testing.TestWorkflowEnvironment;
 import io.temporal.worker.Worker;
@@ -14,6 +15,7 @@ import io.temporal.worker.WorkflowImplementationOptions;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -87,10 +89,69 @@ class OrderFulfillmentWorkflowTest {
         return new Outcome(failed, Ledger.entries(order.orderId()));
     }
 
-    // --- Challenge 2: TODO 1, unwind ------------------------------------------------
+    // --- Challenge 1: no TODO; the Client's summary of the Event History --------------
+
+    /** The summary the starter prints for one order, read from its Event History. */
+    private HistorySummary summarize(io.temporal.devdays.saga.Order order) {
+        fulfil(order, new OrderActivitiesImpl());
+        return HistorySummary.of(env.getWorkflowClient().fetchHistory("test-" + order.orderId()), order);
+    }
+
+    private static final String SUMMARY = "HistorySummary.java";
 
     @Test
     @Order(1)
+    @Tag("challenge1")
+    void summaryOfCleanOrder() {
+        HistorySummary s = summarize(newOrder());
+        assertEquals(List.of("ReserveInventory", "ChargePayment", "DispatchCourier"), s.stepsCompleted(),
+                "The Client's summary misread a clean order's Event History. Compare " + SUMMARY
+                        + " with the one in solution/.");
+        assertEquals(List.of(), s.undosCompleted(), "A clean order ran no undo. Compare " + SUMMARY
+                + " with the one in solution/.");
+        assertEquals(List.of(), s.undosOwed(), "A clean order owes no undo. Compare " + SUMMARY
+                + " with the one in solution/.");
+    }
+
+    /** Every undo the order owed is either completed or still owed, never both, never neither. */
+    private static void assertAccounted(HistorySummary s, List<String> owed) {
+        List<String> all = new java.util.ArrayList<>(s.undosCompleted().stream().filter(owed::contains).toList());
+        all.addAll(s.undosOwed());
+        assertEquals(new java.util.TreeSet<>(owed), new java.util.TreeSet<>(all),
+                "The Client's summary lost track of an undo: completed " + s.undosCompleted() + ", still owed "
+                        + s.undosOwed() + ". Compare " + SUMMARY + " with the one in solution/.");
+        assertEquals(all.size(), new java.util.HashSet<>(all).size(),
+                "The Client's summary lists an undo as both completed and still owed. Compare " + SUMMARY
+                        + " with the one in solution/.");
+    }
+
+    @Test
+    @Order(2)
+    @Tag("challenge1")
+    void summaryOfFailedCourier() {
+        HistorySummary s = summarize(newOrder().withFailDispatch());
+        assertEquals(List.of("ReserveInventory", "ChargePayment"), s.stepsCompleted(),
+                "The Client's summary misread the steps. Compare " + SUMMARY + " with the one in solution/.");
+        assertEquals("DispatchCourier", s.stepFailed(),
+                "The Client's summary misread the failed step. Compare " + SUMMARY + " with the one in solution/.");
+        assertAccounted(s, List.of("RefundPaymentIfCharged", "ReleaseInventoryIfReserved"));
+    }
+
+    @Test
+    @Order(3)
+    @Tag("challenge1")
+    void summaryOfChargeThatLandsThenFails() {
+        HistorySummary s = summarize(newOrder().withChargeFailsAfterEffect());
+        assertEquals("ChargePayment", s.stepFailed(),
+                "The Client's summary misread the failed step. Compare " + SUMMARY + " with the one in solution/.");
+        // The charge failed in the history but captured the money, so it owes a refund.
+        assertAccounted(s, List.of("RefundPaymentIfCharged", "ReleaseInventoryIfReserved"));
+    }
+
+    // --- Challenge 2: TODO 1, unwind ------------------------------------------------
+
+    @Test
+    @Order(4)
     @Tag("challenge2")
     void cleanOrderCompletes() {
         var order = newOrder();
@@ -120,7 +181,7 @@ class OrderFulfillmentWorkflowTest {
     }
 
     @Test
-    @Order(2)
+    @Order(5)
     @Tag("challenge2")
     void failedCourierIsUndoneNewestFirst() {
         var order = newOrder().withFailDispatch();
@@ -149,7 +210,7 @@ class OrderFulfillmentWorkflowTest {
     }
 
     @Test
-    @Order(3)
+    @Order(6)
     @Tag("challenge2")
     void failingUndoDoesNotStrandTheRest() {
         var order = newOrder().withFailDispatch();
@@ -162,10 +223,51 @@ class OrderFulfillmentWorkflowTest {
                         + " (newSaga): build the Saga with setContinueWithError(true), so one failing undo does not stop the rest.");
     }
 
+    /** A courier booking that takes a while, so the order can be cancelled mid-dispatch. */
+    static class SlowDispatch extends OrderActivitiesImpl {
+        @Override
+        public String dispatchCourier(io.temporal.devdays.saga.Order order) {
+            try {
+                Thread.sleep(1500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return super.dispatchCourier(order);
+        }
+    }
+
+    @Test
+    @Order(7)
+    @Tag("challenge2")
+    void cancelledOrderStillUnwinds() throws InterruptedException {
+        var order = newOrder();
+        String taskQueue = UUID.randomUUID().toString();
+        Worker worker = env.newWorker(taskQueue);
+        worker.registerWorkflowImplementationTypes(OrderFulfillmentWorkflowImpl.class);
+        worker.registerActivitiesImplementations(new SlowDispatch());
+        env.start();
+        WorkflowStub stub = env.getWorkflowClient().newUntypedWorkflowStub("OrderFulfillmentWorkflow",
+                WorkflowOptions.newBuilder().setTaskQueue(taskQueue).setWorkflowId("test-" + order.orderId()).build());
+        stub.start(order);
+        for (int i = 0; i < 100 && !Ledger.entries(order.orderId()).contains("charge:" + order.orderId()); i++) {
+            Thread.sleep(50);
+        }
+        stub.cancel();
+        try {
+            stub.getResult(OrderResult.class);
+        } catch (WorkflowFailedException expected) {
+            // Cancelled: the order did not go through.
+        }
+        assertTrue(Ledger.entries(order.orderId()).containsAll(expected(order, "refund", "release")),
+                "The order was cancelled mid-dispatch and nothing was undone: the ledger shows "
+                        + Ledger.entries(order.orderId()) + ". In " + WORKFLOW
+                        + " (fulfill), keep unwind(saga) inside Workflow.newDetachedCancellationScope(...).run(), so a cancelled Workflow still runs its undos.");
+    }
+
     // --- Challenge 3: TODO 2a and 2b, register before the step ----------------------
 
     @Test
-    @Order(4)
+    @Order(8)
     @Tag("challenge3")
     void chargeThatLandsThenFailsIsRefunded() {
         var order = newOrder().withChargeFailsAfterEffect();
@@ -192,7 +294,7 @@ class OrderFulfillmentWorkflowTest {
     }
 
     @Test
-    @Order(5)
+    @Order(9)
     @Tag("challenge3")
     void reservationThatLandsThenFailsIsReleased() {
         var order = newOrder();
@@ -205,10 +307,58 @@ class OrderFulfillmentWorkflowTest {
                         + WORKFLOW + " (fulfill): register the release with saga.addCompensation BEFORE reserveInventory runs.");
     }
 
+    /**
+     * The courier API and the refund API are both down for a moment: every
+     * dispatch attempt fails, and the refund fails twice before it goes through.
+     * Both failures are retryable.
+     */
+    static class RefundApiFlaky extends OrderActivitiesImpl {
+        final AtomicInteger dispatchAttempts = new AtomicInteger();
+        final AtomicInteger refundAttempts = new AtomicInteger();
+
+        @Override
+        public String dispatchCourier(io.temporal.devdays.saga.Order order) {
+            dispatchAttempts.incrementAndGet();
+            throw ApplicationFailure.newFailure("courier API down", "CourierApiDown");
+        }
+
+        @Override
+        public void refundPaymentIfCharged(io.temporal.devdays.saga.Order order) {
+            if (refundAttempts.incrementAndGet() <= 2) {
+                throw ApplicationFailure.newFailure("refund API down", "RefundApiDown");
+            }
+            super.refundPaymentIfCharged(order);
+        }
+    }
+
+    @Test
+    @Order(10)
+    @Tag("challenge3")
+    void undoRetriesUntilItSucceeds() {
+        var order = newOrder();
+        var activities = new RefundApiFlaky();
+        Outcome out = fulfil(order, activities);
+        assertTrue(out.failed(),
+                "The courier failed but the Workflow completed. Keep the `throw e;` at the end of the catch block in "
+                        + WORKFLOW + " (fulfill).");
+        assertEquals(2, activities.dispatchAttempts.get(),
+                "The courier step ran " + activities.dispatchAttempts.get() + " times; a forward step should give up"
+                        + " after 2 attempts so the order can unwind. Compare the `activities` stub in " + WORKFLOW
+                        + " with the one in solution/.");
+        assertTrue(out.entries().contains("refund:" + order.orderId()),
+                "The refund failed twice and was never retried to success: it ran " + activities.refundAttempts.get()
+                        + " times, and the ledger shows " + out.entries() + ". TODO 2b in " + WORKFLOW
+                        + " (fulfill): register the refund on the undos stub, saga.addCompensation(undos::refundPaymentIfCharged, order),"
+                        + " so it retries with UNDO_OPTIONS instead of giving up after 2 attempts.");
+        assertEquals(expected(order, "reserve", "charge", "refund", "release"), out.entries(),
+                "Expected reserve, charge, refund, release, and the ledger shows " + out.entries()
+                        + ". TODO 2a in " + WORKFLOW + " (fulfill): register the release on the undos stub too.");
+    }
+
     // --- Challenge 4: TODO 3a and 3b, safe to repeat --------------------------------
 
     @Test
-    @Order(6)
+    @Order(11)
     @Tag("challenge4")
     void releaseWithNothingReservedDoesNothing() {
         var order = newOrder();
@@ -219,7 +369,7 @@ class OrderFulfillmentWorkflowTest {
     }
 
     @Test
-    @Order(7)
+    @Order(12)
     @Tag("challenge4")
     void releaseTwiceReleasesOnce() {
         var order = newOrder();
@@ -233,7 +383,7 @@ class OrderFulfillmentWorkflowTest {
     }
 
     @Test
-    @Order(8)
+    @Order(13)
     @Tag("challenge4")
     void refundWithNothingChargedDoesNothing() {
         var order = newOrder();
@@ -244,7 +394,7 @@ class OrderFulfillmentWorkflowTest {
     }
 
     @Test
-    @Order(9)
+    @Order(14)
     @Tag("challenge4")
     void refundTwiceRefundsOnce() {
         var order = newOrder();
@@ -258,7 +408,7 @@ class OrderFulfillmentWorkflowTest {
     }
 
     @Test
-    @Order(10)
+    @Order(15)
     @Tag("challenge4")
     void failedReservationReleasesNothing() {
         var order = newOrder().withFailReserve();

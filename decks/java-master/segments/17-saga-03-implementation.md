@@ -79,11 +79,16 @@ Pseudocode of workshops/saga-order-fulfillment/solution/src/main/java/io/tempora
 The next slide is the same Workflow in real Java; this one is the shape,
 without the syntax.
 
-Five minutes, one click per note. Out of frame, as fields of the class: one
-`Workflow.newActivityStub(OrderActivities.class, ...)` hands back all five
-Activities with a 10 second Start-To-Close Timeout and two attempts, and the
-logger is `Workflow.getLogger(OrderFulfillmentWorkflowImpl.class)`. The SDK does
-not know which of the five Activities is an undo.
+Five minutes, one click per note. Out of frame, as fields of the class: two
+`Workflow.newActivityStub(OrderActivities.class, ...)` stubs over the same five
+Activities. `activities`, for the forward steps, has a 10 second Start-To-Close
+Timeout and two attempts: a step that keeps failing gives up fast so the order
+can unwind. `undos`, for the compensations, has no attempt limit and backs off
+from 500 ms to at most 10 s, for up to 5 minutes: an undo that gives up strands
+the stock or the money. The logger is
+`Workflow.getLogger(OrderFulfillmentWorkflowImpl.class)`. The SDK does not know
+which of the five Activities is an undo; the stub you register it on decides how
+it retries.
 
 The walk is in execution order: forward through the `try`, then the `catch` and
 the unwind. The builds below name the Java each pseudocode line becomes on the
@@ -101,7 +106,7 @@ The bubbles are the short version. The full explanation for each build:
 
 - **Build 3 - Line 4: the failure boundary.** Every step that can fail goes inside the try. A failing Activity lands in the catch below, which is where the unwind starts.
 
-- **Build 4 - Line 5: register before the step.** `saga.addCompensation(activities::releaseInventoryIfReserved, order)` takes a method reference on the Activity stub and its argument, and stores them. Nothing runs yet.
+- **Build 4 - Line 5: register before the step.** `saga.addCompensation(undos::releaseInventoryIfReserved, order)` takes a method reference on the `undos` Activity stub and its argument, and stores them. Nothing runs yet. When it does run, it retries with the `undos` stub's options.
 
 - **Build 5 - Line 6: step 1 runs.** Calling a method on the Activity stub schedules reserveInventory on the Task Queue and blocks the Workflow until its result comes back. The reservation lands in the inventory system, outside the Workflow. Its undo is already on record.
 
@@ -111,13 +116,13 @@ The bubbles are the short version. The full explanation for each build:
 
 - **Build 8 - Line 12: the happy path.** If dispatch succeeds, the Workflow returns the tracking number. The Saga is simply dropped: nothing is undone.
 
-- **Build 9 - Line 14: compensate Activity failures only.** In Java, `catch (ActivityFailure e)`. An ActivityFailure is the business failure a Saga compensates. Anything else, such as a NullPointerException from a bug in Workflow code, is not caught, so not a single undo is scheduled. An exception that is not a Temporal failure fails the Workflow Task, not the Workflow, so Temporal retries the Task and you can fix and redeploy without refunding anyone. One thing this slide does not handle: if someone cancels the Workflow, the error is a CanceledFailure and it goes straight through. Compensating on cancellation means running the unwind in `Workflow.newDetachedCancellationScope`, since Activities scheduled in a cancelled scope are cancelled too.
+- **Build 9 - Line 14: compensate Activity failures only.** In Java, `catch (ActivityFailure e)`. An ActivityFailure is the business failure a Saga compensates. Anything else, such as a NullPointerException from a bug in Workflow code, is not caught, so not a single undo is scheduled. An exception that is not a Temporal failure fails the Workflow Task, not the Workflow, so Temporal retries the Task and you can fix and redeploy without refunding anyone. One thing this slide does not handle: if someone cancels the Workflow, the Activity in flight fails with an ActivityFailure whose cause is a CanceledFailure, so this catch does run, but every undo it schedules is in the cancelled scope and is cancelled at once (and `continueWithError` hides that). The Workshop runs the unwind in `Workflow.newDetachedCancellationScope`, so the undos still run.
 
 - **Build 10 - Line 15: log the failure.** The logger from `Workflow.getLogger` is replay-aware: it does not repeat this line when the Workflow replays its history. `Shared.rootCause` digs out the Activity's own failure, here CourierUnavailable.
 
 - **Build 11 - Line 17: newest first.** Because each undo went on the front, walking the list runs refundPaymentIfCharged, then releaseInventoryIfReserved. The undo order mirrors the forward order. `saga.compensate()` does this walk for you. By default it runs one undo at a time; `setParallelCompensation(true)` would start them all at once.
 
-- **Build 12 - Line 19: run one compensation.** Each undo is an Activity call on the same stub, so it gets timeouts and retries too.
+- **Build 12 - Line 19: run one compensation.** Each undo is an Activity call on the `undos` stub, so it gets its own timeouts and a retry policy that does not give up after two attempts.
 
 - **Build 13 - Lines 18-21: one failure must not strand the rest.** Each undo has its own try/catch. If one fails after its retries, the unwind moves on to the next. In Java that is `setContinueWithError(true)` on the Saga's options; the default is false, which stops the unwind at the first failed undo. The Saga does not log the failure for you; it shows in the Event History as an `ActivityTaskFailed` Event. In production, this is where you alert a human.
 
@@ -140,10 +145,10 @@ public OrderResult fulfill(Order order) {
       new Saga(new Saga.Options.Builder().setContinueWithError(true).build());
 
   try {
-    saga.addCompensation(activities::releaseInventoryIfReserved, order);
+    saga.addCompensation(undos::releaseInventoryIfReserved, order);
     activities.reserveInventory(order);
 
-    saga.addCompensation(activities::refundPaymentIfCharged, order);
+    saga.addCompensation(undos::refundPaymentIfCharged, order);
     activities.chargePayment(order);
 
     String trackingNumber = activities.dispatchCourier(order);

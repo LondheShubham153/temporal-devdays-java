@@ -17,7 +17,8 @@ description: |-
 
   1. Watch an order fail halfway with nothing undone.
   2. Unwind: make the Saga run the undos, newest first, past a failing one.
-  3. Register each undo before its step, so a step that lands and still fails is reversed.
+  3. Register each undo before its step, so a step that lands and still fails is reversed,
+     on a stub whose retry policy does not give up.
   4. Make each undo safe to run when there is nothing to undo, and safe to run twice.
 
   Every Check runs your code and tells you what is missing and where.
@@ -57,5 +58,5 @@ lab_config:
   hideStopButton: false
   default_layout: AssignmentLeft
   default_layout_sidebar_size: 33
-checksum: "9616118647072985262"
+checksum: "8643520818892938123"
 enhanced_loading: false

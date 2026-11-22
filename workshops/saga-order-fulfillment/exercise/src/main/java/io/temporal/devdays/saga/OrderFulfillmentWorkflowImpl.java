@@ -17,8 +17,8 @@ import org.slf4j.Logger;
 public class OrderFulfillmentWorkflowImpl implements OrderFulfillmentWorkflow {
     private static final Logger log = Workflow.getLogger(OrderFulfillmentWorkflowImpl.class);
 
-    // Every Activity, undos included, gets two quick attempts. A compensation is
-    // an ordinary Activity with an ordinary retry policy, so it can run more than once.
+    // A forward step that keeps failing should give up fast, so the order can
+    // unwind: two quick attempts.
     private final OrderActivities activities = Workflow.newActivityStub(
             OrderActivities.class,
             ActivityOptions.newBuilder()
@@ -29,17 +29,34 @@ public class OrderFulfillmentWorkflowImpl implements OrderFulfillmentWorkflow {
                             .build())
                     .build());
 
+    // An undo that gives up strands the stock or the money, so it keeps retrying
+    // with backoff: no attempt limit, 500 ms doubling to at most 10 s between
+    // attempts, for up to 5 minutes in all.
+    private static final ActivityOptions UNDO_OPTIONS = ActivityOptions.newBuilder()
+            .setStartToCloseTimeout(Duration.ofSeconds(10))
+            .setScheduleToCloseTimeout(Duration.ofMinutes(5))
+            .setRetryOptions(RetryOptions.newBuilder()
+                    .setInitialInterval(Duration.ofMillis(500))
+                    .setBackoffCoefficient(2)
+                    .setMaximumInterval(Duration.ofSeconds(10))
+                    .build())
+            .build();
+
+    // The same five Activities, called with UNDO_OPTIONS. An undo retries with the
+    // options of the stub it was registered on.
+    private final OrderActivities undos = Workflow.newActivityStub(OrderActivities.class, UNDO_OPTIONS);
+
     @Override
     public OrderResult fulfill(Order order) {
         Saga saga = newSaga();
 
         try {
-            // TODO 2a start: register the undo BEFORE the step, so swap these two statements
+            // TODO 2a start: register the undo BEFORE the step, on the undos stub
             activities.reserveInventory(order);
             saga.addCompensation(activities::releaseInventoryIfReserved, order);
             // TODO 2a end
 
-            // TODO 2b start: same swap for the charge
+            // TODO 2b start: same for the charge: undos stub, before the step
             activities.chargePayment(order);
             saga.addCompensation(activities::refundPaymentIfCharged, order);
             // TODO 2b end
@@ -49,7 +66,9 @@ public class OrderFulfillmentWorkflowImpl implements OrderFulfillmentWorkflow {
 
         } catch (ActivityFailure e) {
             log.warn("fulfillment failed for {}, unwinding: {}", order.orderId(), Shared.rootCause(e));
-            unwind(saga);
+            // Detached, so the undos still run if the Workflow itself was cancelled:
+            // inside a cancelled scope each undo Activity would be cancelled at once.
+            Workflow.newDetachedCancellationScope(() -> unwind(saga)).run();
             // Compensating is not succeeding. Rethrow so the Workflow ends Failed and
             // the caller learns the order did not go through.
             throw e;

@@ -4,7 +4,7 @@ containers:
   # Pinned by digest, not :latest. A moving tag lets a sandbox boot a cached older
   # image. Re-pin after every rebuild with:
   #   docker buildx imagetools inspect ghcr.io/nadvolod/saga-java-sandbox:latest --format "{{.Manifest.Digest}}"
-  image: ghcr.io/nadvolod/saga-java-sandbox@sha256:fd9ee38a626bbeb4be5c52e8812c0a357d65108d0863bb14a1e7d705cf171178
+  image: ghcr.io/nadvolod/saga-java-sandbox@sha256:4dc4241e2d7a4ef0bdce3a20c118c51670b244b3ca20424de68d3a344550c6d0
   shell: /bin/bash
   # One Java Worker, a Temporal dev server, one code-server with the Java
   # language server (~1 GB on its own), and Maven Checks.

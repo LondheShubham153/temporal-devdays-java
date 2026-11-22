@@ -54,8 +54,9 @@ and refunds charges that never happened.
 
 # See it first
 
-If the [button label="Worker" background="#444CE7"](tab-1) tab is not running
-the Worker, start it there:
+Starting this Challenge stopped the Worker you ran in Challenge 3. Start a
+fresh one in this Challenge's
+[button label="Worker" background="#444CE7"](tab-1) tab:
 
 ```bash,run
 run-worker
@@ -67,7 +68,22 @@ In the [button label="Client" background="#444CE7"](tab-2) tab:
 run-starter --fail-reserve
 ```
 
-The [button label="Worker" background="#444CE7"](tab-1) tab:
+```bash,nocopy
+Order failed: InventoryUnavailable: inventory service unavailable
+The Workflow ended Failed. That is expected: the order did not go through.
+
+Event History of fulfillment-ORD-XXXXXX:
+  steps completed: none
+  step failed:     ReserveInventory
+  undos completed: ReleaseInventoryIfReserved
+  undos still owed: none
+```
+
+The Workflow ending Failed is expected. The summary looks clean too: no step
+landed, nothing is owed. But `ReleaseInventoryIfReserved` completed, because it
+was registered before its step. The Event History records that an undo ran, not
+what it did. Only the undo knows that, and the
+[button label="Worker" background="#444CE7"](tab-1) tab shows what it did:
 
 ```bash,nocopy
 17:17:13 WARN OrderFulfillmentWorkflowImpl - fulfillment failed for ORD-XXXXXX, unwinding: InventoryUnavailable: inventory service unavailable
@@ -76,9 +92,11 @@ The [button label="Worker" background="#444CE7"](tab-1) tab:
 
 Nothing was reserved, and stock was released anyway.
 
-There is a second reason for the fix. A compensation is an ordinary Activity
-with an ordinary retry policy, so Temporal can run it more than once even when it
-succeeds. Releasing twice is the same bug.
+There is a second reason for the fix. Since the last Challenge each undo
+retries until it succeeds, so Temporal can run it again after its effect
+landed: if the Worker dies, or the attempt times out, before Temporal records
+the completion, the retry runs it a second time. Releasing twice is the same
+bug.
 
 # Step 1 of 2: make the release safe (TODO 3a)
 
@@ -183,11 +201,17 @@ This is the last TODO.
 
 # Run it
 
-Save, and the Worker restarts. Run the same order again:
+Save, and the Worker you started in this Challenge restarts on its own. In the
+[button label="Client" background="#444CE7"](tab-2) tab, run the same order
+again:
 
 ```bash,run
 run-starter --fail-reserve
 ```
+
+The Client prints exactly what it printed before the fix: the Workflow ends
+Failed, as expected, and `ReleaseInventoryIfReserved` completed. The difference
+is in the [button label="Worker" background="#444CE7"](tab-1) tab:
 
 ```bash,nocopy
 17:16:54 WARN OrderFulfillmentWorkflowImpl - fulfillment failed for ORD-XXXXXX, unwinding: InventoryUnavailable: inventory service unavailable
@@ -215,6 +239,9 @@ acts once when run twice. If it fails, the message names TODO 3a or 3b.
   keeps one failing undo from stranding the rest.
 - Register the undo **before** the step, because a step can land its effect and
   still report failure.
+- Give the undos their own retry policy: a forward step gives up fast so the
+  order can unwind; an undo keeps retrying, because one that gives up strands
+  the stock or the money.
 - So every undo must cope with nothing to undo, and with running twice.
 
 ---
