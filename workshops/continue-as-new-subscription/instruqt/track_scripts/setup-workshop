@@ -28,21 +28,66 @@ if ! curl -sf -o /dev/null "http://127.0.0.1:8080/" 2>/dev/null; then
 fi
 
 # 3. The Temporal dev server. --ip 0.0.0.0 so the service tab reaches the UI.
+#    The UI listens on 8234, behind the proxy in step 3b, which owns 8233.
 #    The two dynamic-config values shrink the Event History limits so the lab
 #    shows them in seconds: the Service suggests Continue-As-New at 40 Events
 #    (normally 4,096) and terminates a run past 200 (normally 51,200). The
 #    assignment quotes both numbers; SubscriptionWorkflowTest.java starts its
 #    own dev server with a smaller pair.
-if ! curl -sf http://127.0.0.1:8233 >/dev/null 2>&1; then
+if ! curl -sf http://127.0.0.1:8234 >/dev/null 2>&1; then
     nohup temporal server start-dev \
         --ip 0.0.0.0 \
         --dynamic-config-value limit.historyCount.suggestContinueAsNew=40 \
         --dynamic-config-value limit.historyCount.error=200 \
         --port 7233 \
-        --ui-port 8233 \
+        --ui-port 8234 \
         --db-filename /root/temporal.db \
         --log-level warn \
         > /tmp/temporal-server.log 2>&1 &
+    disown || true
+fi
+
+# 3b. The Temporal UI proxy. The dev server's UI sends X-Frame-Options: SAMEORIGIN,
+#     so the browser refuses to show it in the Instruqt tab (a blank tab, while
+#     the editor and terminals work). The proxy listens on 8233, the port the
+#     tab and config.yml name, and forwards to the UI on 8234 minus that header.
+if ! curl -sf http://127.0.0.1:8233 >/dev/null 2>&1; then
+    cat > /tmp/ui-proxy.py <<'PROXY'
+import http.client, sys
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+UP = ("127.0.0.1", int(sys.argv[2]))
+DROP = {"x-frame-options", "connection", "keep-alive", "transfer-encoding", "content-length"}
+
+class H(BaseHTTPRequestHandler):
+    def _go(self):
+        n = int(self.headers.get("Content-Length") or 0)
+        body = self.rfile.read(n) if n else None
+        hdrs = {k: v for k, v in self.headers.items() if k.lower() != "connection"}
+        c = http.client.HTTPConnection(*UP, timeout=60)
+        c.request(self.command, self.path, body, hdrs)
+        r = c.getresponse()
+        data = r.read()
+        self.send_response(r.status)
+        for k, v in r.getheaders():
+            if k.lower() in DROP:
+                continue
+            if k.lower() == "content-security-policy":
+                v = ";".join(p for p in v.split(";") if "frame-ancestors" not in p)
+                if not v.strip():
+                    continue
+            self.send_header(k, v)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(data)
+        c.close()
+    do_GET = do_POST = do_PUT = do_DELETE = do_PATCH = do_HEAD = do_OPTIONS = _go
+    def log_message(self, *a): pass
+
+ThreadingHTTPServer(("0.0.0.0", int(sys.argv[1])), H).serve_forever()
+PROXY
+    nohup python3 /tmp/ui-proxy.py 8233 8234 > /tmp/ui-proxy.log 2>&1 &
     disown || true
 fi
 
